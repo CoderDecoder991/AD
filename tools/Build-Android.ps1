@@ -185,6 +185,10 @@ for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
 
 if ($Install) {
     if (-not (Test-Path $adbExe)) { throw "adb not found: $adbExe" }
+    # adb prints "daemon not running; starting now" on stderr, which "Stop" would turn into a failure.
+    # Native exit codes are checked explicitly below instead.
+    $ErrorActionPreference = "Continue"
+    & $adbExe start-server 2>$null | Out-Null
     $devices = & $adbExe devices | Select-String "\tdevice$"
     if (-not $devices) { Write-Host "No authorised Android device connected; skipping install." -ForegroundColor Yellow; exit 0 }
     Write-Host "Installing on device..."
