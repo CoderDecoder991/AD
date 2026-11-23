@@ -1,101 +1,258 @@
 [
   {
-    "id": "concrete_road_barrier",
-    "name": "Concrete Road Barrier",
+    "id": "exterior_aircon_unit",
+    "name": "Exterior Aircon Unit",
+    "authors": [
+      "Monsta3D"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/exterior_aircon_unit",
+    "bytes": 7667928,
+    "verified_md5": true
+  },
+  {
+    "id": "modular_electricity_poles",
+    "name": "Modular Electricity Poles",
+    "authors": [
+      "James Ray Cock"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/modular_electricity_poles",
+    "bytes": 12423631,
+    "verified_md5": true
+  },
+  {
+    "id": "street_lamp_01",
+    "name": "Street Lamp 01",
+    "authors": [
+      "Josh Dean"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/street_lamp_01",
+    "bytes": 2166163,
+    "verified_md5": true
+  },
+  {
+    "id": "rollershutter_door",
+    "name": "Rollershutter Door",
+    "authors": [
+      "MP"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/rollershutter_door",
+    "bytes": 2342983,
+    "verified_md5": true
+  },
+  {
+    "id": "rollershutter_window_01",
+    "name": "Rollershutter Window 01",
+    "authors": [
+      "MP"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/rollershutter_window_01",
+    "bytes": 2236225,
+    "verified_md5": true
+  },
+  {
+    "id": "modular_airduct_rectangular_01",
+    "name": "Modular Airduct Rectangular 01",
+    "authors": [
+      "James Ray Cock"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/modular_airduct_rectangular_01",
+    "bytes": 2766753,
+    "verified_md5": true
+  },
+  {
+    "id": "security_camera_01",
+    "name": "Security Camera 01",
+    "authors": [
+      "Alexander Otterbeck",
+      "Yann Kervran"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/security_camera_01",
+    "bytes": 1759323,
+    "verified_md5": true
+  },
+  {
+    "id": "utility_box_01",
+    "name": "Utility Box 01",
+    "authors": [
+      "James Ray Cock"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/utility_box_01",
+    "bytes": 1977061,
+    "verified_md5": true
+  },
+  {
+    "id": "propane_tank",
+    "name": "Propane Tank",
+    "authors": [
+      "Slinc"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/propane_tank",
+    "bytes": 2214101,
+    "verified_md5": true
+  },
+  {
+    "id": "old_tyre",
+    "name": "Old Tyre",
+    "authors": [
+      "MP"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/old_tyre",
+    "bytes": 2237203,
+    "verified_md5": true
+  },
+  {
+    "id": "plastic_crate_01",
+    "name": "Plastic Crate 01",
+    "authors": [
+      "PierreB3D"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/plastic_crate_01",
+    "bytes": 3188865,
+    "verified_md5": true
+  },
+  {
+    "id": "cardboard_box_01",
+    "name": "Cardboard Box 01",
+    "authors": [
+      "Rahul Chaudhary"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/cardboard_box_01",
+    "bytes": 2168437,
+    "verified_md5": true
+  },
+  {
+    "id": "covered_car",
+    "name": "Covered Car",
+    "authors": [
+      "MP"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/covered_car",
+    "bytes": 2349276,
+    "verified_md5": true
+  },
+  {
+    "id": "namaqualand_boulder_02",
+    "name": "Namaqualand Boulder 02",
+    "authors": [
+      "Greg Zaal",
+      "Rico Cilliers"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/namaqualand_boulder_02",
+    "bytes": 5139304,
+    "verified_md5": true
+  },
+  {
+    "id": "namaqualand_boulder_04",
+    "name": "Namaqualand Boulder 04",
+    "authors": [
+      "Jenelle van Heerden"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/namaqualand_boulder_04",
+    "bytes": 3715812,
+    "verified_md5": true
+  },
+  {
+    "id": "rock_07",
+    "name": "Rock 07",
+    "authors": [
+      "Jenelle van Heerden"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/rock_07",
+    "bytes": 2184088,
+    "verified_md5": true
+  },
+  {
+    "id": "shrub_01",
+    "name": "Shrub 01",
+    "authors": [
+      "Rico Cilliers"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/shrub_01",
+    "bytes": 6877527,
+    "verified_md5": true
+  },
+  {
+    "id": "wild_rooibos_bush",
+    "name": "Wild Rooibos Bush",
+    "authors": [
+      "James Ray Cock",
+      "Jenelle van Heerden"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/wild_rooibos_bush",
+    "bytes": 2464496,
+    "verified_md5": true
+  },
+  {
+    "id": "dead_tree_trunk",
+    "name": "Dead Tree Trunk",
+    "authors": [
+      "Rob Tuytel"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/dead_tree_trunk",
+    "bytes": 4787539,
+    "verified_md5": true
+  },
+  {
+    "id": "industrial_wall_lamp",
+    "name": "Industrial Wall Lamp",
+    "authors": [
+      "Kuutti Siitonen"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/industrial_wall_lamp",
+    "bytes": 3778230,
+    "verified_md5": true
+  },
+  {
+    "id": "metal_trash_can",
+    "name": "Metal Trash Can",
+    "authors": [
+      "GurJas Studios"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/metal_trash_can",
+    "bytes": 4994983,
+    "verified_md5": true
+  },
+  {
+    "id": "cement_bag",
+    "name": "Cement Bag",
+    "authors": [
+      "PierreB3D"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/cement_bag",
+    "bytes": 1448049,
+    "verified_md5": true
+  },
+  {
+    "id": "concrete_road_barrier_02",
+    "name": "Concrete Road Barrier 02",
     "authors": [
       "Amal Kumar"
     ],
     "licence": "CC0 1.0",
-    "source": "https://polyhaven.com/a/concrete_road_barrier",
-    "bytes": 3750787,
-    "verified_md5": true
-  },
-  {
-    "id": "portable_searchlight",
-    "name": "Portable Searchlight",
-    "authors": [
-      "Elijah Cragg"
-    ],
-    "licence": "CC0 1.0",
-    "source": "https://polyhaven.com/a/portable_searchlight",
-    "bytes": 1925133,
-    "verified_md5": true
-  },
-  {
-    "id": "flood_lights",
-    "name": "Flood Lights",
-    "authors": [
-      "James Ray Cock"
-    ],
-    "licence": "CC0 1.0",
-    "source": "https://polyhaven.com/a/flood_lights",
-    "bytes": 6883186,
-    "verified_md5": true
-  },
-  {
-    "id": "security_light",
-    "name": "Security Light",
-    "authors": [
-      "Maximilian Schuster"
-    ],
-    "licence": "CC0 1.0",
-    "source": "https://polyhaven.com/a/security_light",
-    "bytes": 2390412,
-    "verified_md5": true
-  },
-  {
-    "id": "ammo_box",
-    "name": "Ammo Box",
-    "authors": [
-      "DanKit"
-    ],
-    "licence": "CC0 1.0",
-    "source": "https://polyhaven.com/a/ammo_box",
-    "bytes": 1472675,
-    "verified_md5": true
-  },
-  {
-    "id": "old_military_crate",
-    "name": "Old Military Crate",
-    "authors": [
-      "Jack Mava"
-    ],
-    "licence": "CC0 1.0",
-    "source": "https://polyhaven.com/a/old_military_crate",
-    "bytes": 2495423,
-    "verified_md5": true
-  },
-  {
-    "id": "wooden_military_crate",
-    "name": "Wooden Military Crate",
-    "authors": [
-      "Prabhjinder Singh"
-    ],
-    "licence": "CC0 1.0",
-    "source": "https://polyhaven.com/a/wooden_military_crate",
-    "bytes": 3045519,
-    "verified_md5": true
-  },
-  {
-    "id": "metal_jerrycan_green",
-    "name": "Metal Jerrycan Green",
-    "authors": [
-      "Ulan Cabanilla"
-    ],
-    "licence": "CC0 1.0",
-    "source": "https://polyhaven.com/a/metal_jerrycan_green",
-    "bytes": 2655089,
-    "verified_md5": true
-  },
-  {
-    "id": "portable_generator",
-    "name": "Portable Generator",
-    "authors": [
-      "James Ray Cock"
-    ],
-    "licence": "CC0 1.0",
-    "source": "https://polyhaven.com/a/portable_generator",
-    "bytes": 3434440,
+    "source": "https://polyhaven.com/a/concrete_road_barrier_02",
+    "bytes": 2928100,
     "verified_md5": true
   }
 ]

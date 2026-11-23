@@ -18,13 +18,17 @@ namespace AirDefense.Core
             public float renderScale;
             public float shadowDistance;   // 0 = no shadows
             public int targetFps;
+            public int msaa;               // 1, 2 or 4 samples
+            public bool ssao;              // screen-space ambient occlusion
+            public int anisotropic;        // forced minimum anisotropic filtering level (sharp ground at grazing angles)
         }
 
+        // Visual-clarity pass (2026-11-24): High renders at 85% with FSR sharpening, 4x MSAA and SSAO.
         public static TierValues For(QualityTier t) => t switch
         {
-            QualityTier.High => new TierValues { renderScale = 0.70f, shadowDistance = 150f, targetFps = 60 },
-            QualityTier.Medium => new TierValues { renderScale = 0.60f, shadowDistance = 80f, targetFps = 60 },
-            _ => new TierValues { renderScale = 0.50f, shadowDistance = 0f, targetFps = 30 },
+            QualityTier.High => new TierValues { renderScale = 0.85f, shadowDistance = 150f, targetFps = 60, msaa = 4, ssao = true, anisotropic = 8 },
+            QualityTier.Medium => new TierValues { renderScale = 0.70f, shadowDistance = 80f, targetFps = 60, msaa = 2, ssao = false, anisotropic = 4 },
+            _ => new TierValues { renderScale = 0.55f, shadowDistance = 0f, targetFps = 30, msaa = 1, ssao = false, anisotropic = 2 },
         };
 
         public static QualityTier Detected { get; private set; } = QualityTier.High;
@@ -52,9 +56,25 @@ namespace AirDefense.Core
             {
                 urp.renderScale = v.renderScale;
                 urp.shadowDistance = Mathf.Max(0.01f, v.shadowDistance);
+                urp.msaaSampleCount = v.msaa;
+                SetFeature<ScreenSpaceAmbientOcclusion>(urp, v.ssao);
             }
+            QualitySettings.anisotropicFiltering = AnisotropicFiltering.ForceEnable;
+            Texture.SetGlobalAnisotropicFilteringLimits(v.anisotropic, 16);
             QualitySettings.shadows = v.shadowDistance > 0f ? UnityEngine.ShadowQuality.All : UnityEngine.ShadowQuality.Disable;
             Application.targetFrameRate = v.targetFps;
+        }
+
+        /// <summary>Turns a renderer feature (e.g. SSAO) on or off in every renderer of the URP asset.</summary>
+        private static void SetFeature<T>(UniversalRenderPipelineAsset urp, bool on) where T : ScriptableRendererFeature
+        {
+            var field = typeof(UniversalRenderPipelineAsset).GetField("m_RendererDataList",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            if (field?.GetValue(urp) is not ScriptableRendererData[] list) return;
+            foreach (var data in list)
+                if (data != null)
+                    foreach (var f in data.rendererFeatures)
+                        if (f is T) f.SetActive(on);
         }
 
         public static string Label(int overrideValue) => overrideValue switch

@@ -53,6 +53,7 @@ namespace AirDefense.EditorTools
             EditorUtility.SetDirty(roster);
             AssetDatabase.SaveAssets();
 
+            RenderQualitySetup.Apply(); // MSAA, FSR, soft shadows, SSAO (visual-clarity pass)
             BuildScene(mats, visuals, zu, cram, mission, economy, roster);
             Debug.Log("[M1SceneBuilder] M1 greybox scene built: " + ScenePath);
         }
@@ -339,13 +340,16 @@ namespace AirDefense.EditorTools
             center.SetParent(env, false);
 
             Prim(env, "Ground", PrimitiveType.Plane, new Vector3(0, 0, 0), new Vector3(500, 1, 500), m["Ground"], false);
-            NightBaseDresser.Box(env, "Apron", new Vector3(0, 0.02f, 10), new Vector3(150, 0.04f, 130), m["Concrete"], 4f);
+            // Visual-clarity pass: gravel-concrete apron, roads, detailed facades, clutter, desert scatter (BaseDetailer).
+            var pal = BaseDetailer.MakePalette(m["Concrete"], m["GunDark"]);
+            NightBaseDresser.Box(env, "Apron", new Vector3(0, 0.02f, 10), new Vector3(150, 0.04f, 130), BaseDetailer.Surface("Apron", "gravel_concrete", 0.2f), 4f);
 
             // Buildings (world-UV boxes so textures keep real scale); roofs are the threats' target points.
             var targets = new List<Transform>();
-            void Building(string n, Vector3 pos, Vector3 size)
+            void Building(string n, Vector3 pos, Vector3 size, BaseDetailer.Style style = BaseDetailer.Style.Office, Material wall = null)
             {
-                var b = NightBaseDresser.Box(env, n, pos + Vector3.up * size.y / 2f, size, m["Building"], 4f);
+                var b = NightBaseDresser.Box(env, n, pos + Vector3.up * size.y / 2f, size, wall != null ? wall : m["Building"], 4f);
+                BaseDetailer.DetailBuilding(env, n, pos, size, style, pal, n.GetHashCode());
                 b.GetComponent<MeshRenderer>().shadowCastingMode = ShadowCastingMode.On;
                 NightBaseDresser.Box(env, n + "_Roof", pos + Vector3.up * (size.y + 0.15f), new Vector3(size.x * 1.04f, 0.3f, size.z * 1.04f), m["Roof"], 2.5f);
                 var tp = new GameObject(n + "_Target").transform;
@@ -353,11 +357,19 @@ namespace AirDefense.EditorTools
                 tp.position = pos + Vector3.up * (size.y + 0.5f);
                 targets.Add(tp);
             }
-            Building("Command", new Vector3(0, 0, 25), new Vector3(24, 8, 16));
-            Building("Barracks_A", new Vector3(-40, 0, 30), new Vector3(30, 6, 12));
-            Building("Barracks_B", new Vector3(40, 0, 30), new Vector3(30, 6, 12));
-            Building("Hangar", new Vector3(-35, 0, -10), new Vector3(28, 12, 26));
-            Building("Depot", new Vector3(38, 0, -8), new Vector3(20, 7, 20));
+            Building("Command", new Vector3(0, 0, 25), new Vector3(24, 8, 16), BaseDetailer.Style.Office, pal.plaster);
+            Building("Barracks_A", new Vector3(-40, 0, 30), new Vector3(30, 6, 12), BaseDetailer.Style.Office, pal.plaster);
+            Building("Barracks_B", new Vector3(40, 0, 30), new Vector3(30, 6, 12), BaseDetailer.Style.Office, pal.plaster);
+            Building("Hangar", new Vector3(-35, 0, -10), new Vector3(28, 12, 26), BaseDetailer.Style.Hangar, pal.metalWall);
+            Building("Depot", new Vector3(38, 0, -8), new Vector3(20, 7, 20), BaseDetailer.Style.Depot, pal.container);
+
+            // Roads: north-south from the gun berm to Command, east-west between the barracks and the hangar/depot.
+            BaseDetailer.Road(env, "Road_NS", new Vector3(0, 0, -50), new Vector3(0, 0, 15), 8f, pal, 0.06f);
+            BaseDetailer.Road(env, "Road_EW", new Vector3(-62, 0, 7), new Vector3(62, 0, 7), 6f, pal, 0.07f);
+            foreach (float z in new[] { -42f, -22f, -2f }) BaseDetailer.StreetLamp(env, new Vector3(-5.2f, 0f, z), 90f);
+            foreach (float x in new[] { -52f, -32f, 26f, 52f }) BaseDetailer.StreetLamp(env, new Vector3(x, 0f, 11f), 180f); // -32: clear of the C-RAM view
+            BaseDetailer.Clutter(env);
+            BaseDetailer.TerrainScatter(env, 90f);
 
             for (int i = 0; i < 3; i++)
                 Prim(env, "FuelTank_" + i, PrimitiveType.Cylinder, new Vector3(62 + i * 9, 4, -45), new Vector3(7, 4, 7), m["Concrete"], true);

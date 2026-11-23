@@ -27,7 +27,32 @@ PROPS = [
     ("jerrycan",         "metal_jerrycan_green",    None,                                  800,  1.0),
     ("barrel",           "Barrel_01",               None,                                 1200,  1.0),
     ("generator",        "portable_generator",      None,                                 2000,  1.0),
+    # Visual-clarity pass (2026-11-24): building detail, roads, clutter, terrain scatter.
+    ("aircon",           "exterior_aircon_unit",    ["exterior_aircon_unit"],             2500,  1.0),
+    ("roller_door",      "rollershutter_door",      ["rollershutter_door"],               1200,  1.0),
+    ("roller_window",    "rollershutter_window_01", ["rollershutter_window_01"],          1200,  1.0),
+    ("roof_duct",        "modular_airduct_rectangular_01", None,                          5000,  1.0),
+    ("security_camera",  "security_camera_01",      None,                                 1200,  1.0),
+    ("utility_box",      "utility_box_01",          None,                                 1200,  1.0),
+    ("propane_tank",     "propane_tank",            None,                                 1000,  1.0),
+    ("tyre",             "old_tyre",                None,                                  700,  1.0),
+    ("plastic_crate",    "plastic_crate_01",        None,                                  800,  1.0),
+    ("cardboard_box",    "cardboard_box_01",        None,                                  500,  1.0),
+    ("covered_car",      "covered_car",             None,                                 4000,  1.0),
+    ("boulder_a",        "namaqualand_boulder_02",  None,                                 1500,  1.0),
+    ("boulder_b",        "namaqualand_boulder_04",  None,                                 1500,  1.0),
+    ("rock_small",       "rock_07",                 None,                                  400,  6.0),
+    ("bush_a",           "wild_rooibos_bush",       ["wild_rooibos_bush_a"],              2000,  1.0),
+    ("bush_b",           "wild_rooibos_bush",       ["wild_rooibos_bush_c"],              2000,  1.0),
+    ("dead_log",         "dead_tree_trunk",         None,                                 1500,  1.0),
+    ("wall_lamp",        "industrial_wall_lamp",    None,                                 1200,  1.5),
+    ("trash_can",        "metal_trash_can",         ["metal_trash_can", "metal_trash_can_handle_left", "metal_trash_can_handle_right", "metal_trash_can_lid"], 2500, 1.0),
+    ("cement_bag",       "cement_bag",              None,                                  844,  1.0),
+    ("barrier_b",        "concrete_road_barrier_02", None,                                1500,  1.0),
+    ("street_lamp",      "street_lamp_01",          None,                                 3000,  2.0),
 ]
+# Optional: only these prop names (extra arguments after the two folders).
+ONLY = set(sys.argv[sys.argv.index("--") + 1:][2:])
 
 
 def tri_count(o):
@@ -42,6 +67,8 @@ def select_only(objs):
 
 
 for name, folder, keep, target, scale in PROPS:
+    if ONLY and name not in ONLY:
+        continue
     src = os.path.join(SRC, folder, f"{folder}_1k.gltf")
     bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.ops.import_scene.gltf(filepath=src)

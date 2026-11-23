@@ -27,7 +27,7 @@ namespace AirDefense.EditorTools
         /// <summary>Puts Poly Haven texture sets onto the placeholder materials (kept as the same assets).</summary>
         public static void UpgradeMaterials(Dictionary<string, Material> m)
         {
-            Apply(m["Ground"], "brown_mud_dry", 1f / 6f);
+            Apply(m["Ground"], "dry_ground_01", 1f / 6f);   // 2K desert ground (visual-clarity pass)
             Apply(m["Sandbag"], "brown_mud_dry", 1f / 3f);
             Apply(m["Concrete"], "concrete_floor_worn_001", 1f / 4f);
             Apply(m["Building"], "concrete_wall_003", 1f / 4f);
@@ -43,17 +43,20 @@ namespace AirDefense.EditorTools
 
         private static void Apply(Material mat, string set, float _)
         {
-            var diff = AssetDatabase.LoadAssetAtPath<Texture2D>($"{Tex}{set}/{set}_diff_1k.jpg");
+            Texture2D T(string kind) =>
+                AssetDatabase.LoadAssetAtPath<Texture2D>($"{Tex}{set}/{set}_{kind}_2k.jpg") ??
+                AssetDatabase.LoadAssetAtPath<Texture2D>($"{Tex}{set}/{set}_{kind}_1k.jpg");
+            var diff = T("diff");
             if (diff == null) return;
             mat.SetTexture("_BaseMap", diff);
             mat.SetColor("_BaseColor", Color.white);
-            var nor = AssetDatabase.LoadAssetAtPath<Texture2D>($"{Tex}{set}/{set}_nor_gl_1k.jpg");
+            var nor = T("nor_gl");
             if (nor != null)
             {
                 mat.SetTexture("_BumpMap", nor);
                 mat.EnableKeyword("_NORMALMAP");
             }
-            var ao = AssetDatabase.LoadAssetAtPath<Texture2D>($"{Tex}{set}/{set}_ao_1k.jpg");
+            var ao = T("ao");
             if (ao != null)
             {
                 mat.SetTexture("_OcclusionMap", ao);
@@ -131,10 +134,12 @@ namespace AirDefense.EditorTools
         {
             moon.name = "Moon";
             moon.type = LightType.Directional;
-            moon.intensity = 0.45f;
-            moon.color = new Color(0.62f, 0.72f, 1f);
+            moon.intensity = 0.75f;
+            moon.color = new Color(0.74f, 0.8f, 0.95f);
             moon.shadows = LightShadows.Soft;
-            moon.shadowStrength = 0.7f;
+            moon.shadowStrength = 0.85f;
+            moon.shadowBias = 0.05f;
+            moon.shadowNormalBias = 0.4f;
             moon.transform.rotation = Quaternion.Euler(38f, -35f, 0f);
 
             var sky = AssetDatabase.LoadAssetAtPath<Texture>(SkyPath);
@@ -156,13 +161,13 @@ namespace AirDefense.EditorTools
 
             // Trilight ambient: predictable without baking lighting.
             RenderSettings.ambientMode = AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor = new Color(0.10f, 0.13f, 0.22f);
-            RenderSettings.ambientEquatorColor = new Color(0.07f, 0.08f, 0.11f);
-            RenderSettings.ambientGroundColor = new Color(0.03f, 0.03f, 0.035f);
+            RenderSettings.ambientSkyColor = new Color(0.12f, 0.14f, 0.20f);
+            RenderSettings.ambientEquatorColor = new Color(0.09f, 0.095f, 0.11f);
+            RenderSettings.ambientGroundColor = new Color(0.04f, 0.04f, 0.045f);
 
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.ExponentialSquared;
-            RenderSettings.fogDensity = 0.00055f;
+            RenderSettings.fogDensity = 0.00045f; // depth haze, but distant ridges and buildings stay legible
             RenderSettings.fogColor = new Color(0.035f, 0.045f, 0.07f);
         }
 
@@ -182,10 +187,14 @@ namespace AirDefense.EditorTools
                 set(c);
                 EditorUtility.SetDirty(c);
             }
-            Ensure<Bloom>(b => { b.intensity.Override(0.9f); b.threshold.Override(0.85f); b.scatter.Override(0.6f); });
+            Ensure<Bloom>(b => { b.intensity.Override(0.75f); b.threshold.Override(0.95f); b.scatter.Override(0.55f); b.highQualityFiltering.Override(false); });
             Ensure<Tonemapping>(t => t.mode.Override(TonemappingMode.ACES));
-            Ensure<Vignette>(v => { v.intensity.Override(0.28f); v.smoothness.Override(0.5f); });
-            Ensure<ColorAdjustments>(c => { c.postExposure.Override(0f); c.saturation.Override(-10f); });
+            Ensure<Vignette>(v => { v.intensity.Override(0.2f); v.smoothness.Override(0.45f); });
+            // Neutral grade: natural materials, a slight cool cast only in the deep shadows, warm lamps stay warm.
+            Ensure<ColorAdjustments>(c => { c.postExposure.Override(0.3f); c.contrast.Override(12f); c.saturation.Override(0f); });
+            Ensure<SplitToning>(t => { t.shadows.Override(new Color(0.46f, 0.5f, 0.56f)); t.highlights.Override(new Color(0.55f, 0.52f, 0.48f)); t.balance.Override(-30f); });
+            Ensure<ShadowsMidtonesHighlights>(t => { t.shadows.Override(new Vector4(0.99f, 1f, 1.02f, 0.01f)); t.highlights.Override(new Vector4(1.02f, 1.0f, 0.98f, 0f)); });
+            Ensure<WhiteBalance>(w => { w.temperature.Override(2f); w.tint.Override(0f); });
             EditorUtility.SetDirty(profile);
 
             var vol = new GameObject("Post Processing").AddComponent<Volume>();

@@ -8,7 +8,7 @@ namespace AirDefense.EditorTools
 {
     /// <summary>
     /// Mobile texture rules for imported 3D models under Assets/_Project/Art/Models:
-    /// max 1024 px, ASTC on Android, mipmaps on. Each texture's role is read from
+    /// max 1024 px (2048 for *_2k material sets), ASTC on Android, mipmaps on. Each texture's role is read from
     /// the sibling .gltf file: normal maps get the NormalMap type; metallic-roughness
     /// and occlusion maps are imported as linear (not sRGB) data.
     /// </summary>
@@ -24,7 +24,9 @@ namespace AirDefense.EditorTools
             if (!model && !material) return;
             var ti = (TextureImporter)assetImporter;
             ti.mipmapEnabled = true;
-            ti.maxTextureSize = 1024;
+            // Close-up ground and wall sets come in 2K (visual-clarity pass); everything else stays 1K.
+            int max = material && assetPath.Contains("_2k") ? 2048 : 1024;
+            ti.maxTextureSize = max;
             if (material) ti.wrapMode = TextureWrapMode.Repeat;
 
             // Model textures: role from the .gltf. Material sets (Poly Haven naming): role from the file name.
@@ -34,7 +36,7 @@ namespace AirDefense.EditorTools
 
             var android = ti.GetPlatformTextureSettings("Android");
             android.overridden = true;
-            android.maxTextureSize = 1024;
+            android.maxTextureSize = max;
             android.format = TextureImporterFormat.ASTC_6x6;
             android.compressionQuality = 50;
             ti.SetPlatformTextureSettings(android);

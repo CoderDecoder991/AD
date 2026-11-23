@@ -175,11 +175,9 @@ namespace AirDefense.UI
             hpOutline.effectColor = new Color(0f, 0f, 0f, 0.9f);
             hpOutline.effectDistance = new Vector2(1.5f, -1.5f);
 
-            // Top-centre banner + placeholder notice.
+            // Top-centre banner.
             _banner = UiFactory.Text("Banner", _safe, "", 40, TextAnchor.UpperCenter, UiFactory.Warn);
             _banner.rectTransform.Anchor(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -24f), new Vector2(900f, 60f));
-            var ph = UiFactory.Text("PlaceholderNotice", _safe, "PLACEHOLDER GREYBOX ART  -  M1 PROTOTYPE", 16, TextAnchor.LowerCenter, new Color(1f, 1f, 1f, 0.45f));
-            ph.rectTransform.Anchor(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 6f), new Vector2(900f, 24f));
 
             // Pause (top-right).
             var pauseBtn = UiFactory.Button("Pause", _safe, "II", 40, () => SetPaused(true));

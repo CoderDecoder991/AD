@@ -14,7 +14,7 @@ import time
 import urllib.request
 
 UA = {"User-Agent": "AirDefenseAssetFetcher/1.0"}
-RES_TEX = "1k"
+RES_TEX = os.environ.get("PH_RES", "1k")  # e.g. PH_RES=2k for close-up surfaces
 RES_HDRI = "2k"
 
 
