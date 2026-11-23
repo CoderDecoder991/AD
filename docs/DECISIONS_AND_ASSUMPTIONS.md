@@ -31,6 +31,7 @@ Single source of truth for project decisions. Every other document refers back h
 | C-16 | Development PC: i5-6400, 16 GB RAM, GT 730. Performance is judged on the device, not in the editor. | User, 2026-11-23 |
 | C-17 | Engine: **Unity 6 LTS with URP** (was R-01, closes O-05). | User, 2026-11-23 |
 | C-17a | Installed editor is **6000.6.10f1 (Unity 6.6)**. Unity Hub lists it as a "Supported" release, not LTS. Acceptable for M0; review moving to an LTS version before M2 (see O-12). | Install, 2026-11-23 |
+| C-20 | ZU-23-2 firing sound uses the user's own Tunguska recording (opening shot + seamless loop + echo tail), pitched x1.05. | User, 2026-11-23 |
 | C-19 | Aim by dragging on the **left** side of the screen; FIRE stays bottom-right (replaces R-06 "right ~60%"). | User, 2026-11-23 |
 | C-18 | Project lives on the C: SSD at `C:\dev\AirDefense`, in Git with Git LFS (was R-17). | User approved M0 plan, 2026-11-23 |
 
@@ -91,5 +92,6 @@ Single source of truth for project decisions. Every other document refers back h
 | 2026-11-23 | Document created from the handoff brief. C-15, C-16 confirmed by user. All R-items proposed. |
 | 2026-11-23 | User approved Unity 6 + URP and started M0. R-01 → C-17, R-17 → C-18, O-05 closed. Docs moved to `C:\dev\AirDefense`. |
 | 2026-11-23 | Unity project created (6000.6.10f1, URP). Unapproved packages Unity added by default (Unity IAP, Unity Analytics) removed per C-12, along with unused 2D/multiplayer/navigation/collab packages. Added C-17a, O-12. |
+| 2026-11-23 | User confirmed the ZU-23-2 sound built from their own Tunguska recording "sounds right" (C-20). |
 | 2026-11-23 | User feedback: sound not realistic, add realistic muzzle flash and recoil, aim on the left. Implemented layered autocannon sound, muzzle flash (burst, flame tongue, light, smoke), per-barrel recoil + camera kick + muzzle climb (Screen shake setting), left-side aiming (C-19). |
 | 2026-11-23 | M1 greybox built and verified on the Pad 8. User supplied three .glb weapon models; their metadata shows Sketchfab CC-BY-4.0 downloads by third-party authors. Recorded in ASSET_REGISTER. Added O-13. |
