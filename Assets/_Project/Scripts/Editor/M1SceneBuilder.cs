@@ -138,11 +138,11 @@ namespace AirDefense.EditorTools
             w.barrels = 2;
             w.magazineSize = 100;
             w.reloadTime = 4f;
-            w.muzzleVelocity = 900f;
+            w.muzzleVelocity = 970f; // 23x152 HEI-T spec
             w.projectileLifetime = 2.2f;
             w.damagePerRound = 1f;
             w.dispersion = 0.35f;
-            w.tracerEvery = 2;
+            w.tracerEvery = 1; // ZU-23 belts are mostly tracer rounds; both barrels show
             w.heatPerSecond = 0.2f;
             w.coolPerSecond = 0.15f;
             w.overheatRecoverBelow = 0.3f;
@@ -382,6 +382,10 @@ namespace AirDefense.EditorTools
             proj.visuals = visuals;
             proj.threats = threatMgr;
             proj.viewCamera = cam;
+            // Self-destruct bursts reuse the fireball sheet and soft smoke (realistic 23 mm HEI-T behaviour).
+            proj.burstFireMaterial = NightBaseDresser.AdditiveParticleMaterial("SelfDestructFlash", GeneratedTexture("FireballSheet.png", () => MuzzleFlashFX.MakeFireballSheet()));
+            proj.burstFireMaterial.SetColor("_BaseColor", new Color(3.2f, 2.4f, 1.6f, 1f));
+            proj.burstSmokeMaterial = NightBaseDresser.AlphaParticleMaterial("SelfDestructSmoke", NightBaseDresser.SoftDotAsset());
 
             var inputGo = new GameObject("PlayerInput");
             inputGo.transform.SetParent(systems, false);

@@ -40,7 +40,10 @@ A short-range, high-rate manual gun. It teaches leading targets, burst disciplin
 | Magazine (rounds) | 100 | 100 |
 | Reload time (s) | 4.0 | 6.0 |
 | Heat per second of fire / cooling per second | 0.20 / 0.15 (overheat lock until < 0.30) — M1 tuned | n/a (bursts only) |
-| Muzzle velocity (m/s) / round lifetime (s) | 900 / 2.2 — M1 | 900 / 2.2 |
+| Muzzle velocity (m/s) | 970 (23x152 HEI-T spec) | 970 |
+| Air drag k (1/m) | 4.6e-4 (≈ 970 → 610 m/s by 1 km) | same |
+| Tracer burn / self-destruct (s) | 3.5 / 5.4–8 (spec 5–12, capped for performance) | same |
+| Tracers | Every round, both barrels (ZU belts are mostly tracer rounds) | — |
 | Recoil: barrel travel / return time | 0.12 m / 0.09 s, barrels alternate | — |
 | Recoil: camera kick / shake / muzzle climb per round | 0.22° / 0.12° / 0.02° (+ ±0.012° drift) | — |
 | Damage per round | 1.0 | 1.0 |
@@ -143,3 +146,17 @@ Medium-range hybrid. Guns for close targets, missiles for distant, fast threats 
 
 ## 5. Data structure (summary)
 Each weapon is a `WeaponDefinition` data asset with: id, display name, unlock cost, unlock prerequisite, model prefab, camera rig, one or more `WeaponMode`s (guns/missiles), each with the fields in the tables above, plus `AutonomousProfile` (eligible classes, range, reaction delay, accuracy multiplier, priority rule). See [TECHNICAL_ARCHITECTURE.md](TECHNICAL_ARCHITECTURE.md).
+
+## 6. Tracer behaviour (research notes, 2026-11-23)
+
+What real 23 mm fire looks like, and how the game reproduces it:
+
+| Real behaviour | Source | In game (`ProjectileSystem`) |
+|---|---|---|
+| 23x152 HEI-T muzzle velocity ≈ 970 m/s | Manufacturer spec sheets ([Arcus](https://arcus.bg/?p=21642), [Arsenal](https://arsenal-defense.com/?p=619), [Yugoimport](https://www.yugoimport.com/sites/default/files/documents/2023-12/23%20mm%20x%20152B%20HE-T_HEI-T%20eng..pdf)) | `muzzleVelocity = 970` |
+| Shells slow under air drag and arc down | Standard exterior ballistics (quadratic drag, k = ½ρCdA/m) | `Ballistics.Step`, k = 4.6e-4/m; lead ring and tests include drag |
+| Tracer burns ≥ 3.5 s, then the round flies on unseen | Spec sheets | Tracer drawn until `tracerBurnTime`, then hidden |
+| Self-destruct after ~5–12 s | Spec sheets | Random 5.4–8 s, small flash + smoke puff |
+| A tracer is a point of light; the "streak" is exposure/perception | [Tracer ammunition](https://www.wikipedia.org/wiki/Tracer_round); forum discussions | Trail = distance flown in 1/60 s, a typical camera shutter (≈16 m dashes with gaps; shrinks as it slows), bright head, fading tail, flicker |
+| Bright point lights stay visible far away | Perception of point sources | Minimum on-screen width (3.5 px) so far tracers remain glowing points |
+| Bright tracers ignite almost at the muzzle | [Tracer ammunition](https://www.wikipedia.org/wiki/Tracer_round) | Visible from 3 m past the muzzle |

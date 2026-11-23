@@ -23,11 +23,11 @@ MonoBehaviour:
   barrels: 2
   magazineSize: 100
   reloadTime: 4
-  muzzleVelocity: 900
+  muzzleVelocity: 970
   projectileLifetime: 2.2
   damagePerRound: 1
   dispersion: 0.35
-  tracerEvery: 2
+  tracerEvery: 1
   heatPerSecond: 0.2
   coolPerSecond: 0.15
   overheatRecoverBelow: 0.3

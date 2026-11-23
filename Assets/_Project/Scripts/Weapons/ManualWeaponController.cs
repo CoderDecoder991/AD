@@ -131,7 +131,10 @@ namespace AirDefense.Weapons
             Transform muzzle = mount.NextMuzzle(out int barrel);
             Vector3 dir = Ballistics.ApplyDispersion(mount.BoreDirection, def.dispersion, _rng);
             bool tracer = def.tracerEvery > 0 && (_roundCounter++ % def.tracerEvery) == 0;
-            projectiles.Fire(muzzle.position, dir, def.muzzleVelocity, def.projectileLifetime, def.damagePerRound, tracer);
+            // Realistic round: drag, tracer burn, and self-destruct at a random time in the fuse window.
+            bool sd = def.selfDestructTime.y > 0f;
+            float life = sd ? Mathf.Lerp(def.selfDestructTime.x, def.selfDestructTime.y, (float)_rng.NextDouble()) : def.projectileLifetime;
+            projectiles.Fire(muzzle.position, dir, def.muzzleVelocity, def.dragK, life, tracer ? def.tracerBurnTime : 0f, sd, def.damagePerRound);
 
             // Recoil: barrel slides back, camera kicks, aim climbs a little (the player corrects).
             if (recoil != null) recoil.Kick(barrel);

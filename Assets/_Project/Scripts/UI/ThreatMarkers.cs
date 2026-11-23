@@ -135,7 +135,7 @@ namespace AirDefense.UI
                 return;
             }
             Vector3 muzzle = gun.pitchPivot.position;
-            if (Ballistics.TryLeadPoint(muzzle, target.transform.position, target.Velocity, gun.definition.muzzleVelocity, out Vector3 aim)
+            if (Ballistics.TryLeadPoint(muzzle, target.transform.position, target.Velocity, gun.definition.muzzleVelocity, gun.definition.dragK, out Vector3 aim)
                 && Vector3.Distance(muzzle, aim) <= gun.definition.maxRange * 1.2f)
             {
                 Vector3 sp = cam.WorldToScreenPoint(aim);
