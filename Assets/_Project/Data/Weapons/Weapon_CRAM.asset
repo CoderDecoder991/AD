@@ -31,8 +31,10 @@ MonoBehaviour:
   damagePerRound: 0.6
   dispersion: 0.12
   tracerEvery: 1
+  tracerWidthScale: 1.7
+  tracerLengthScale: 1.6
   spinUpTime: 0.3
-  flashEvery: 2
+  flashEvery: 1
   airburstScale: 0.7
   airburstSmokeChance: 0.15
   heatPerSecond: 0.07

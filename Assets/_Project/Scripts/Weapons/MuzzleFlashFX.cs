@@ -25,6 +25,9 @@ namespace AirDefense.Weapons
         public float flashLife = 0.04f;      // seconds (2-3 frames at 60 fps)
         public float lightIntensity = 10f;
         public float lightRange = 16f;
+        [Tooltip("Smoke puff on every Nth flash (high-rate guns would otherwise overflow the smoke pool).")]
+        public int smokeEvery = 1;
+        private int _flashCount;
 
         private ParticleSystem[] _fire;
         private ParticleSystem[] _smoke;
@@ -95,6 +98,7 @@ namespace AirDefense.Weapons
             _light.transform.position = origin + fwd * 0.6f;
 
             // Smoke puff that lingers and drifts.
+            if (smokeEvery > 1 && (_flashCount++ % smokeEvery) != 0) return;
             var ep = new ParticleSystem.EmitParams
             {
                 position = origin + fwd * 0.3f,
@@ -138,7 +142,7 @@ namespace AirDefense.Weapons
             var main = ps.main;
             main.simulationSpace = ParticleSystemSimulationSpace.World;
             main.playOnAwake = false;
-            main.maxParticles = 60;
+            main.maxParticles = 120; // C-RAM: up to 75 flashes a second
             var em = ps.emission; em.enabled = false;
             var shape = ps.shape; shape.enabled = false;
             // Pick one of four fireball shapes at random (no animation: real flash is a single exposure).
@@ -176,7 +180,7 @@ namespace AirDefense.Weapons
             var main = ps.main;
             main.simulationSpace = ParticleSystemSimulationSpace.World;
             main.playOnAwake = false;
-            main.maxParticles = 50;
+            main.maxParticles = 80;
             main.startColor = new Color(0.55f, 0.55f, 0.55f, 0.35f);
             var em = ps.emission; em.enabled = false;
             var shape = ps.shape; shape.enabled = false;

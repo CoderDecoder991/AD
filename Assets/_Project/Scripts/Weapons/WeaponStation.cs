@@ -90,7 +90,7 @@ namespace AirDefense.Weapons
             float burn = def.tracerBurnTime * (0.94f + 0.12f * (float)_rng.NextDouble());
             bool smoke = _rng.NextDouble() < def.airburstSmokeChance;
             projectiles.Fire(muzzle.position, dir, def.muzzleVelocity, def.dragK, life, tracer ? burn : 0f, sd, def.damagePerRound,
-                             def.airburstScale, smoke, Manual);
+                             def.airburstScale, smoke, Manual, def.tracerWidthScale, def.tracerLengthScale);
             if (Manual) ManualRoundsFired++;
 
             if (recoil != null) recoil.Kick(barrel);

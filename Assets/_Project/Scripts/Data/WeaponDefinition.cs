@@ -44,6 +44,10 @@ namespace AirDefense.Data
         public float dispersion = 0.35f;
         [Tooltip("Every Nth round is drawn as a tracer.")]
         public int tracerEvery = 2;
+        [Tooltip("Tracer glow width multiplier (bright 20 mm tracers seen through bloom read wider).")]
+        public float tracerWidthScale = 1f;
+        [Tooltip("Tracer streak length multiplier. At 75 rounds/s, streaks longer than the 15 m round spacing merge into one stream, as night video of a rotary gun shows.")]
+        public float tracerLengthScale = 1f;
         [Tooltip("Rotary (Gatling) guns: seconds for the barrel cluster to spin up to full rate. 0 = fires at full rate at once.")]
         public float spinUpTime;
         [Tooltip("Muzzle flash on every Nth round (high-rate guns merge into one continuous flame anyway).")]

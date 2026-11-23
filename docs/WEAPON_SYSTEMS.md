@@ -95,7 +95,8 @@ Very-short-range point defence. Excellent against rockets, artillery and mortars
 | Self-destruct | 3.3–3.8 s (≈2.0–2.2 km), tracer burns 3.5 s | M940 self-destructs at tracer burnout, ~2 km |
 | Effective range | 30–2,000 m | 1.5–2 km |
 | Damage per round / dispersion | 0.6 / 0.12° | — |
-| Tracers | every round, 1/60 s streaks merge into a near-continuous stream | night footage |
+| Tracers | every round; glow 1.7x wider and streaks 1.6x longer (29 m > 15 m round spacing), so they merge into one continuous stream | night accounts: "bright tracers which illuminate the night" ([DVIDS, Balad](https://www.dvidshub.net/news/printable/39004)) |
+| Muzzle flash | a flash on every round, 1.35x the ZU core, flame reaching 1.5x further, bright light (16, 28 m range) that lights the mount; smoke on every 3rd round | user request 2026-11-24 ("more the tracer stream and the muzzle flash") |
 | Self-destruct look | 0.7 × size flash, smoke puff and pop on 15% of rounds | many small bursts at the end of the stream |
 
 ---

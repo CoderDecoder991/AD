@@ -54,6 +54,8 @@ namespace AirDefense.Weapons
             public float burstScale;    // self-destruct flash/puff size (1 = 23 mm)
             public bool burstSmoke;     // this round's self-destruct leaves a puff and a pop
             public bool counted;        // counts toward the player's accuracy (manual fire)
+            public float tracerWidth;   // multiplier on tracerWidth / min pixel width
+            public float tracerLength;  // multiplier on the exposure streak length
         }
 
         private readonly List<Round> _rounds = new List<Round>(512);
@@ -86,7 +88,8 @@ namespace AirDefense.Weapons
         /// <param name="burstSmoke">Whether the self-destruct leaves a smoke puff and a pop.</param>
         /// <param name="counted">Whether a hit counts toward the player's accuracy (false for autonomous fire).</param>
         public void Fire(Vector3 origin, Vector3 direction, float speed, float dragK, float life, float tracerBurn, bool selfDestruct, float damage,
-                         float burstScale = 1f, bool burstSmoke = true, bool counted = true)
+                         float burstScale = 1f, bool burstSmoke = true, bool counted = true,
+                         float tracerWidthScale = 1f, float tracerLengthScale = 1f)
         {
             _rounds.Add(new Round
             {
@@ -102,6 +105,8 @@ namespace AirDefense.Weapons
                 burstScale = burstScale,
                 burstSmoke = burstSmoke,
                 counted = counted,
+                tracerWidth = tracerWidthScale,
+                tracerLength = tracerLengthScale,
             });
         }
 
@@ -163,10 +168,10 @@ namespace AirDefense.Weapons
                         Vector3 dir = r.vel / Mathf.Max(1e-3f, speed);
                         float dist = Vector3.Distance(camPos, r.pos);
                         // Trail = distance flown during the exposure; never longer than the flight so far.
-                        float len = Mathf.Min(speed * exposure, r.travelled);
+                        float len = Mathf.Min(speed * exposure * r.tracerLength, r.travelled);
                         // Keep at least minPixelWidth on screen; trail at least ~3x that so it reads as a streak.
                         float minW = dist * pxAngle * minPixelWidth;
-                        float width = Mathf.Max(tracerWidth, minW);
+                        float width = Mathf.Max(tracerWidth, minW) * r.tracerWidth;
                         len = Mathf.Max(len, width * 5f);
                         // Burning composition flickers slightly; fades in the last 0.3 s before burnout.
                         float flicker = 0.85f + 0.3f * Mathf.PerlinNoise(r.flickerSeed, r.age * 25f);

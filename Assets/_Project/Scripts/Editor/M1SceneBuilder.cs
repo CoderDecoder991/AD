@@ -256,6 +256,15 @@ namespace AirDefense.EditorTools
         /// </summary>
         private static WeaponDefinition CreateCram(WeaponDefinition w)
         {
+            if (w.tracerWidthScale == 1f)
+            {
+                // M3a look pass (user: "more the tracer stream and the muzzle flash"): night video shows one
+                // bright continuous stream and a flame that never goes out while the gun fires.
+                w.tracerWidthScale = 1.7f;
+                w.tracerLengthScale = 1.6f;   // 18 m streaks x 1.6 > 15 m round spacing: a continuous stream
+                w.flashEvery = 1;
+                EditorUtility.SetDirty(w);
+            }
             if (w.fireRate >= 50f) return w; // already configured
             w.traverseSpeed = 115f;
             w.elevationSpeed = 115f;
@@ -792,10 +801,13 @@ namespace AirDefense.EditorTools
             flash.viewCamera = cam;
             flash.fireMaterial = fireMat;
             flash.smokeMaterial = smokeMat;
-            // 20 mm: a smaller flash than the 23 mm; at 75 rounds/s the flashes merge into one flickering flame.
-            flash.coreSize *= 0.8f;
-            flash.lobeSize *= 0.8f;
-            flash.lobeReach *= 0.8f;
+            // At 75 rounds/s the flashes merge into one big flickering flame that lights up the mount at night.
+            flash.coreSize *= 1.35f;
+            flash.lobeSize *= 1.35f;
+            flash.lobeReach *= 1.5f;
+            flash.lightIntensity = 16f;
+            flash.lightRange = 28f;
+            flash.smokeEvery = 3;
             station.muzzleFlash = flash;
             return station;
         }
