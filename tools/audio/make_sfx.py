@@ -132,6 +132,28 @@ def zu_round(crack_src, rng, length=0.42):
     return normalise(a.astype(np.float32), -1.0)
 
 
+def sd_pop(rng, length=1.6):
+    """A 23 mm HE shell bursting ~2.5-3.5 km away, as heard on the ground.
+
+    - Report: a short broadband crack; over kilometres the air absorbs high frequencies,
+      so it arrives as a dull "pop" (strong low-pass) rather than a sharp crack.
+    - Body: a brief low thump from the blast wave.
+    - Ground/terrain echo: one or two quieter, duller repeats 0.2-0.7 s later.
+    """
+    n = int(length * SR)
+    tt = np.arange(n) / SR
+    noise = rng.normal(0, 1, n).astype(np.float32)
+    report = noise * np.exp(-tt / rng.uniform(0.010, 0.016))
+    report = lowpass(lowpass(report, rng.uniform(1400, 2200)), 2400)
+    f = rng.uniform(70, 95) + 60 * np.exp(-tt / 0.02)
+    thump = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-tt / rng.uniform(0.09, 0.14)) * 0.8
+    a = (report * 2.4 + thump).astype(np.float32)
+    for _ in range(rng.integers(1, 3)):
+        a = delay_mix(a, rng.uniform(0.2, 0.7), rng.uniform(0.18, 0.3), lp_hz=700)[:n]
+    a[-int(0.3 * SR):] *= np.linspace(1, 0, int(0.3 * SR))
+    return normalise(a.astype(np.float32), -1.0)
+
+
 def zu_tail(rng, length=2.6):
     """Rolling echo heard after a burst ends: low rumble with scattered distant reflections."""
     n = int(length * SR)
@@ -174,6 +196,10 @@ def main():
         r = np.random.default_rng(100 + v)
         write_wav(os.path.join(out, f"zu23_round_{v + 1}.wav"), zu_round(crack_src, r))
     write_wav(os.path.join(out, "zu23_tail.wav"), zu_tail(np.random.default_rng(7)))
+
+    print("Self-destruct pops (distant 23 mm HE bursts, synthesised):")
+    for v in range(4):
+        write_wav(os.path.join(out, f"sd_pop_{v + 1}.wav"), sd_pop(np.random.default_rng(300 + v)))
 
     print("Synthesised (project-original):")
     # Air-raid siren: slow rise to a wail, held, with motor-like waver.

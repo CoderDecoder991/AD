@@ -23,6 +23,12 @@ MonoBehaviour:
   airbursts:
   - {fileID: 8300000, guid: d316e9af94258ac4888000d7e6704427, type: 3}
   - {fileID: 8300000, guid: 6cd32d07c45ca5d4185602ef4452fdb6, type: 3}
+  selfDestructPops:
+  - {fileID: 8300000, guid: b9d71b3c9c420ee4c8f41fb5ea51ba61, type: 3}
+  - {fileID: 8300000, guid: 6207bdb5dd1c34748a561f46a9f9bb7a, type: 3}
+  - {fileID: 8300000, guid: 138deec289cf9574ab25116991433e4f, type: 3}
+  - {fileID: 8300000, guid: c936caa4237167a4991dd61cc2cc815b, type: 3}
+  selfDestructVolume: 0.7
   impactBase: {fileID: 8300000, guid: 1932af187cd052840ac40ed2c3ea508e, type: 3}
   boom: {fileID: 8300000, guid: d01bb35d1d3e9134d9d77f8768e5e50b, type: 3}
   distantRumble: {fileID: 8300000, guid: e618cfc842454764eba681cc08bf15cb, type: 3}

@@ -64,6 +64,7 @@ Tracks every asset we need, its status and its licence. **Nothing ships without 
 | S-03 | Tunguska guns, missile launch | M4 | Guns: user's own recording, unpitched `tunguska_first_shot.wav` + `tunguska_burst_loop.wav` (ready). Missile launch: Needed | Guns ready; missile: Needed | User-owned (guns) |
 | S-04 | Explosions (near, far), impacts | M1 | `airburst_1-2`, `impact_base`, `distant_rumble` (processed by `tools/audio/make_sfx.py`), `boom_residue.ogg` | Integrated (M2) | **CC0**, "Impacts + Guns SFX", opengameart.org/content/impactsgunsfx; **CC0**, "Residue SFX", opengameart.org/content/residue-sfx |
 | S-05 | Drone and engine loops per threat | M1+ | Store | Needed | — |
+| S-04b | Self-destruct distant pops | M2 | `sd_pop_1-4.wav` synthesised by `tools/audio/make_sfx.py` (`sd_pop`) | Integrated | Project-original |
 | S-06 | Air-raid siren, klaxon, radar beeps, warning tones | M1 | Synthesised by `tools/audio/make_sfx.py` | Integrated (M2) | Project-original |
 | S-07 | Radio callouts (fictional call signs) + static | M2 | Static: synthesised loop. Callouts: voice needed | Static integrated; callouts: Needed | Project-original (static) |
 | S-08 | Night ambience, base machinery | M2 | Store | Needed | — |

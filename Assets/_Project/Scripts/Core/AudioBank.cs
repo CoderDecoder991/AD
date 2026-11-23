@@ -17,6 +17,9 @@ namespace AirDefense.Core
         [Tooltip("Real recording: seamless sustained-fire loop. When set, it replaces per-round shots.")]
         public AudioClip zuBurstLoop;
         public AudioClip[] airbursts;
+        [Tooltip("Distant pops of rounds self-destructing (played distance / 343 m/s after the flash).")]
+        public AudioClip[] selfDestructPops;
+        public float selfDestructVolume = 0.7f;
         public AudioClip impactBase;
         public AudioClip boom;
         public AudioClip distantRumble;

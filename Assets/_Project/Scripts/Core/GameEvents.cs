@@ -20,6 +20,9 @@ namespace AirDefense.Core
         public static event Action<bool> ReloadStarted;
 
         public static void RaiseReloadStarted(bool emptied) => ReloadStarted?.Invoke(emptied);
+        /// <summary>A round self-destructed at this position (flash, sparks, distant pop).</summary>
+        public static event Action<Vector3> RoundSelfDestructed;
+        public static void RaiseRoundSelfDestructed(Vector3 pos) => RoundSelfDestructed?.Invoke(pos);
 
         public static void RaiseThreatSpawned(ThreatAgent t) => ThreatSpawned?.Invoke(t);
         public static void RaiseThreatDestroyed(ThreatAgent t) => ThreatDestroyed?.Invoke(t);
@@ -38,6 +41,7 @@ namespace AirDefense.Core
             WaveStarted = null;
             MissionEnded = null;
             ReloadStarted = null;
+            RoundSelfDestructed = null;
         }
     }
 

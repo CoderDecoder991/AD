@@ -109,8 +109,7 @@ namespace AirDefense.EditorTools
             v.impactFlash = m["Impact"];
             v.navLight = m["NavLight"];
             // Tracer: glowing streak texture, additive, HDR red-orange (Soviet-style red tracer) so bloom makes it glow.
-            var tracerMat = NightBaseDresser.AdditiveParticleMaterial("TracerStreak", GeneratedTexture("TracerStreak.png", () => MuzzleFlashFX.MakeTracerTexture()));
-            tracerMat.SetColor("_BaseColor", new Color(3.4f, 1.3f, 0.55f, 1f));
+            var tracerMat = NightBaseDresser.GlowMaterial("TracerStreak", GeneratedTexture("TracerStreak.png", () => MuzzleFlashFX.MakeTracerTexture()), new Color(3.4f, 1.3f, 0.55f, 1f));
             v.tracer = tracerMat;
             v.cube = Resources.GetBuiltinResource<Mesh>("Cube.fbx");
             v.sphere = Resources.GetBuiltinResource<Mesh>("Sphere.fbx");
@@ -383,9 +382,9 @@ namespace AirDefense.EditorTools
             proj.threats = threatMgr;
             proj.viewCamera = cam;
             // Self-destruct bursts reuse the fireball sheet and soft smoke (realistic 23 mm HEI-T behaviour).
-            proj.burstFireMaterial = NightBaseDresser.AdditiveParticleMaterial("SelfDestructFlash", GeneratedTexture("FireballSheet.png", () => MuzzleFlashFX.MakeFireballSheet()));
-            proj.burstFireMaterial.SetColor("_BaseColor", new Color(3.2f, 2.4f, 1.6f, 1f));
+            proj.burstFireMaterial = NightBaseDresser.GlowMaterial("SelfDestructFlash", GeneratedTexture("FireballSheet.png", () => MuzzleFlashFX.MakeFireballSheet()), new Color(3.6f, 2.7f, 1.8f, 1f));
             proj.burstSmokeMaterial = NightBaseDresser.AlphaParticleMaterial("SelfDestructSmoke", NightBaseDresser.SoftDotAsset());
+            proj.burstSparkMaterial = NightBaseDresser.GlowMaterial("SelfDestructSparks", NightBaseDresser.SoftDotAsset(), new Color(3.5f, 2.6f, 1.4f, 1f));
 
             var inputGo = new GameObject("PlayerInput");
             inputGo.transform.SetParent(systems, false);
@@ -492,6 +491,7 @@ namespace AirDefense.EditorTools
             b.zuBurstLoop = C("zu23_burst_loop.wav");
             b.gunVolume = 0.45f; // every round now plays (not one per pair)
             b.airbursts = new[] { C("airburst_1.wav"), C("airburst_2.wav") };
+            b.selfDestructPops = new[] { C("sd_pop_1.wav"), C("sd_pop_2.wav"), C("sd_pop_3.wav"), C("sd_pop_4.wav") };
             b.impactBase = C("impact_base.wav");
             b.boom = C("boom_residue.ogg");
             b.distantRumble = C("distant_rumble.wav");

@@ -42,7 +42,7 @@ A short-range, high-rate manual gun. It teaches leading targets, burst disciplin
 | Heat per second of fire / cooling per second | 0.20 / 0.15 (overheat lock until < 0.30) — M1 tuned | n/a (bursts only) |
 | Muzzle velocity (m/s) | 970 (23x152 HEI-T spec) | 970 |
 | Air drag k (1/m) | 4.6e-4 (≈ 970 → 610 m/s by 1 km) | same |
-| Tracer burn / self-destruct (s) | 3.5 / 5.4–8 (spec 5–12, capped for performance) | same |
+| Tracer burn / self-destruct (s) | ~5 (±6% per round) / 5.4–9 (spec 5.4–12, capped for performance) | same |
 | Tracers | Every round, both barrels (ZU belts are mostly tracer rounds) | — |
 | Recoil: barrel travel / return time | 0.12 m / 0.09 s, barrels alternate | — |
 | Recoil: camera kick / shake / muzzle climb per round | 0.22° / 0.12° / 0.02° (+ ±0.012° drift) | — |
@@ -155,8 +155,10 @@ What real 23 mm fire looks like, and how the game reproduces it:
 |---|---|---|
 | 23x152 HEI-T muzzle velocity ≈ 970 m/s | Manufacturer spec sheets ([Arcus](https://arcus.bg/?p=21642), [Arsenal](https://arsenal-defense.com/?p=619), [Yugoimport](https://www.yugoimport.com/sites/default/files/documents/2023-12/23%20mm%20x%20152B%20HE-T_HEI-T%20eng..pdf)) | `muzzleVelocity = 970` |
 | Shells slow under air drag and arc down | Standard exterior ballistics (quadratic drag, k = ½ρCdA/m) | `Ballistics.Step`, k = 4.6e-4/m; lead ring and tests include drag |
-| Tracer burns ≥ 3.5 s, then the round flies on unseen | Spec sheets | Tracer drawn until `tracerBurnTime`, then hidden |
-| Self-destruct after ~5–12 s | Spec sheets | Random 5.4–8 s, small flash + smoke puff |
+| Tracer burns ~5 s (OFZT/BZT 5–5.4 s), so tracers glow nearly all the way to where they burst | [ZU-23-2 (Wikipedia)](https://en.wikipedia.org/wiki/ZU-23-2), [ZU-23-2 ammunition table](https://military-history.fandom.com/wiki/ZU-23-2), AZP-23 forum figures | `tracerBurnTime = 5`, varied ±6% so the stream fades raggedly |
+| Self-destruct after 5.4–12 s; max range 2,500 m, altitude 1,500 m | [Arcus HEI-T](https://arcus.bg/23x152mm-hei-t-high-explosive-incendiary-tracer-round/), [Arcus spec PDF](https://arcus.bg/wp-content/uploads/2020/04/23x152mm-HEI-T-Tech-Specs.pdf) | Random 5.4–9 s: flash, spray of burning incendiary fragments arcing down, grey smoke puff |
+| Distant bursts are heard after they are seen (sound 343 m/s; air absorbs high frequencies over km) | Physics (not found in sources; inferred) | `sd_pop_1-4.wav` (dull pop + thump + ground echo), played distance/343 s after the flash (≈7–10 s at 2.5–3.5 km), quieter and lower with distance |
+| Tracers and bursts are bright light sources visible through night haze | Perception | `AirDefense/AdditiveGlowNoFog` shader: glow effects ignore scene fog (scenery keeps it) |
 | A tracer is a point of light; the "streak" is exposure/perception | [Tracer ammunition](https://www.wikipedia.org/wiki/Tracer_round); forum discussions | Trail = distance flown in 1/60 s, a typical camera shutter (≈16 m dashes with gaps; shrinks as it slows), bright head, fading tail, flicker |
 | Bright point lights stay visible far away | Perception of point sources | Minimum on-screen width (3.5 px) so far tracers remain glowing points |
 | Bright tracers ignite almost at the muzzle | [Tracer ammunition](https://www.wikipedia.org/wiki/Tracer_round) | Visible from 3 m past the muzzle |

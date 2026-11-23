@@ -134,7 +134,9 @@ namespace AirDefense.Weapons
             // Realistic round: drag, tracer burn, and self-destruct at a random time in the fuse window.
             bool sd = def.selfDestructTime.y > 0f;
             float life = sd ? Mathf.Lerp(def.selfDestructTime.x, def.selfDestructTime.y, (float)_rng.NextDouble()) : def.projectileLifetime;
-            projectiles.Fire(muzzle.position, dir, def.muzzleVelocity, def.dragK, life, tracer ? def.tracerBurnTime : 0f, sd, def.damagePerRound);
+            // Tracer compositions vary a little round to round (about +/-6%), so the stream fades out raggedly.
+            float burn = def.tracerBurnTime * (0.94f + 0.12f * (float)_rng.NextDouble());
+            projectiles.Fire(muzzle.position, dir, def.muzzleVelocity, def.dragK, life, tracer ? burn : 0f, sd, def.damagePerRound);
 
             // Recoil: barrel slides back, camera kicks, aim climbs a little (the player corrects).
             if (recoil != null) recoil.Kick(barrel);

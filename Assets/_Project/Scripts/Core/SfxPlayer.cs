@@ -26,6 +26,14 @@ namespace AirDefense.Core
         private int _burstRounds;
         private float _lastRoundTime;
         private AudioSource _ui;
+
+        // Distant self-destruct pops: scheduled by sound travel time, played from their own voice pool
+        // so a long burst's 30-ish pops a second don't steal the gun or alert voices.
+        private struct Pending { public float at; public float volume; public float pitch; }
+        private readonly System.Collections.Generic.List<Pending> _pops = new System.Collections.Generic.List<Pending>(256);
+        private AudioSource[] _popVoices;
+        private int _popNext;
+        private const int PopVoices = 12;
         private AudioSource _siren;
         private AudioSource _ambience;
         private AudioSource[] _pool;
@@ -46,6 +54,8 @@ namespace AirDefense.Core
             _ambience = NewSource("Ambience");
             _pool = new AudioSource[PoolSize];
             for (int i = 0; i < PoolSize; i++) _pool[i] = NewSource("Fx" + i);
+            _popVoices = new AudioSource[PopVoices];
+            for (int i = 0; i < PopVoices; i++) _popVoices[i] = NewSource("Pop" + i);
             AudioListener.volume = ProfileStore.Profile.settings.masterVolume;
         }
 
@@ -79,6 +89,7 @@ namespace AirDefense.Core
             GameEvents.WaveStarted += OnWave;
             GameEvents.ReloadStarted += OnReload;
             GameEvents.MissionEnded += OnMissionEnded;
+            GameEvents.RoundSelfDestructed += OnSelfDestruct;
         }
 
         private void OnDisable()
@@ -90,6 +101,7 @@ namespace AirDefense.Core
             GameEvents.WaveStarted -= OnWave;
             GameEvents.ReloadStarted -= OnReload;
             GameEvents.MissionEnded -= OnMissionEnded;
+            GameEvents.RoundSelfDestructed -= OnSelfDestruct;
         }
 
         private void OnRoundFired(Vector3 _)
@@ -130,6 +142,7 @@ namespace AirDefense.Core
 
         private void Update()
         {
+            PlayDuePops();
             // Burst ended: stop the loop with a quick fade and play the rolling echo (stronger after longer bursts).
             if (_burstRounds > 0 && Time.time - _lastRoundTime > 0.07f)
             {
@@ -177,6 +190,36 @@ namespace AirDefense.Core
         {
             if (emptied) _ui.PlayOneShot(bank.emptyClick, 0.8f);
             _ui.PlayOneShot(bank.reload, 0.7f);
+        }
+
+        /// <summary>
+        /// Sound reaches the listener distance / 343 m/s after the flash, quieter with distance
+        /// (spherical spreading, gently floored so far pops stay audible) and slightly lower.
+        /// </summary>
+        private void OnSelfDestruct(Vector3 pos)
+        {
+            if (bank.selfDestructPops == null || bank.selfDestructPops.Length == 0) return;
+            float d = listener ? Vector3.Distance(listener.position, pos) : 2500f;
+            if (_pops.Count > 200) return; // a very long burst: enough pops already queued
+            _pops.Add(new Pending
+            {
+                at = Time.time + d / SpeedOfSound,
+                volume = bank.selfDestructVolume * Mathf.Clamp(900f / Mathf.Max(1f, d), 0.12f, 1f) * Random.Range(0.7f, 1.1f),
+                pitch = Mathf.Lerp(1.05f, 0.85f, Mathf.InverseLerp(1500f, 4000f, d)) * Random.Range(0.94f, 1.06f),
+            });
+        }
+
+        private void PlayDuePops()
+        {
+            for (int i = _pops.Count - 1; i >= 0; i--)
+            {
+                if (_pops[i].at > Time.time) continue;
+                AudioSource v = _popVoices[_popNext];
+                _popNext = (_popNext + 1) % _popVoices.Length;
+                v.pitch = _pops[i].pitch;
+                v.PlayOneShot(bank.selfDestructPops[Random.Range(0, bank.selfDestructPops.Length)], _pops[i].volume);
+                _pops.RemoveAt(i);
+            }
         }
 
         private void OnMissionEnded(MissionResult _)

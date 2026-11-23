@@ -405,6 +405,35 @@ namespace AirDefense.EditorTools
             return mat;
         }
 
+        /// <summary>
+        /// Additive glow that ignores fog (AirDefense/AdditiveGlowNoFog): for light-emitting effects that
+        /// must stay visible at long range at night (tracers, flashes, sparks). Falls back to the URP particle material.
+        /// </summary>
+        public static Material GlowMaterial(string name, Texture tex, Color hdrColour)
+        {
+            var shader = Shader.Find("AirDefense/AdditiveGlowNoFog");
+            if (shader == null)
+            {
+                var fallback = AdditiveParticleMaterial(name, tex);
+                fallback.SetColor("_BaseColor", hdrColour);
+                return fallback;
+            }
+            Directory.CreateDirectory(Gen);
+            string path = $"{Gen}{name}.mat";
+            var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (mat == null)
+            {
+                mat = new Material(shader);
+                AssetDatabase.CreateAsset(mat, path);
+            }
+            mat.shader = shader;
+            mat.SetTexture("_BaseMap", tex);
+            mat.SetColor("_BaseColor", hdrColour);
+            mat.renderQueue = (int)RenderQueue.Transparent;
+            EditorUtility.SetDirty(mat);
+            return mat;
+        }
+
         public static Material AlphaParticleMaterial(string name, Texture tex)
         {
             var mat = AdditiveParticleMaterial(name, tex);

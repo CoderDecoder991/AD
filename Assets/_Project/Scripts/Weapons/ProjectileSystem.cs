@@ -30,13 +30,14 @@ namespace AirDefense.Weapons
         [Tooltip("Physical glow width, metres.")]
         public float tracerWidth = 0.35f;
         [Tooltip("Minimum width on screen, in pixels, so far tracers remain visible points of light.")]
-        public float minPixelWidth = 3.5f;
+        public float minPixelWidth = 8f;
         [Tooltip("Tracers appear once the round is this far from the muzzle (they ignite almost immediately).")]
         public float tracerHiddenDistance = 3f;
 
         [Header("Self-destruct burst (optional)")]
         public Material burstFireMaterial;   // additive fireball sheet
         public Material burstSmokeMaterial;  // alpha soft dot
+        public Material burstSparkMaterial;  // additive soft dot (burning incendiary fragments)
 
         private struct Round
         {
@@ -60,6 +61,7 @@ namespace AirDefense.Weapons
         private static Mesh _ribbon;
         private ParticleSystem _burstFire;
         private ParticleSystem _burstSmoke;
+        private ParticleSystem _burstSparks;
         private readonly System.Random _rng = new System.Random(91);
 
         public int RoundsHit { get; private set; }
@@ -72,6 +74,7 @@ namespace AirDefense.Weapons
             _ribbon ??= BuildRibbon();
             if (burstFireMaterial != null) _burstFire = MakeBurstSystem("SelfDestructFlash", burstFireMaterial, true);
             if (burstSmokeMaterial != null) _burstSmoke = MakeBurstSystem("SelfDestructSmoke", burstSmokeMaterial, false);
+            if (burstSparkMaterial != null) _burstSparks = MakeSparkSystem(burstSparkMaterial);
         }
 
         /// <summary>Simple round (no drag, fixed lifetime). Kept for tests and older callers.</summary>
@@ -157,7 +160,7 @@ namespace AirDefense.Weapons
                         // Keep at least minPixelWidth on screen; trail at least ~3x that so it reads as a streak.
                         float minW = dist * pxAngle * minPixelWidth;
                         float width = Mathf.Max(tracerWidth, minW);
-                        len = Mathf.Max(len, width * 3f);
+                        len = Mathf.Max(len, width * 5f);
                         // Burning composition flickers slightly; fades in the last 0.3 s before burnout.
                         float flicker = 0.85f + 0.3f * Mathf.PerlinNoise(r.flickerSeed, r.age * 25f);
                         float fade = Mathf.Clamp01((r.tracerBurn - r.age) / 0.3f);
@@ -186,10 +189,30 @@ namespace AirDefense.Weapons
         /// <param name="metresPerPixel">World size of one screen pixel at the burst's distance.</param>
         private void SelfDestructBurst(Vector3 pos, float metresPerPixel)
         {
+            GameEvents.RaiseRoundSelfDestructed(pos);
+            if (_burstSparks != null)
+            {
+                // Burning incendiary fragments: spray outward, arc down under gravity, cool and fade.
+                int n = 8 + _rng.Next(6);
+                float sparkSize = Mathf.Max(0.35f, metresPerPixel * 3.5f);
+                float speed = Mathf.Max(25f, metresPerPixel * 60f); // stays visible as a spray at range
+                for (int i = 0; i < n; i++)
+                {
+                    Vector3 dir = new Vector3((float)_rng.NextDouble() - 0.5f, (float)_rng.NextDouble() - 0.3f, (float)_rng.NextDouble() - 0.5f).normalized;
+                    _burstSparks.Emit(new ParticleSystem.EmitParams
+                    {
+                        position = pos, applyShapeToPosition = false,
+                        velocity = dir * speed * (0.5f + (float)_rng.NextDouble()),
+                        startSize = sparkSize * (0.7f + (float)_rng.NextDouble() * 0.6f),
+                        startLifetime = 0.45f + (float)_rng.NextDouble() * 0.5f,
+                        startColor = new Color(1f, 0.8f + (float)_rng.NextDouble() * 0.2f, 0.45f, 1f),
+                    }, 1);
+                }
+            }
             if (_burstFire != null)
             {
                 // A bright flash in a dark sky reads as a spark even when tiny: keep >= ~12 px on screen.
-                float size = Mathf.Max(2.2f + (float)_rng.NextDouble() * 1.5f, metresPerPixel * (10f + (float)_rng.NextDouble() * 6f));
+                float size = Mathf.Max(2.2f + (float)_rng.NextDouble() * 1.5f, metresPerPixel * (16f + (float)_rng.NextDouble() * 8f));
                 _burstFire.Emit(new ParticleSystem.EmitParams
                 {
                     position = pos, applyShapeToPosition = false,
@@ -246,6 +269,36 @@ namespace AirDefense.Weapons
             col.color = g;
             var r = go.GetComponent<ParticleSystemRenderer>();
             r.sharedMaterial = mat;
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            r.receiveShadows = false;
+            ps.Play();
+            return ps;
+        }
+
+        private ParticleSystem MakeSparkSystem(Material mat)
+        {
+            var go = new GameObject("SelfDestructSparks");
+            go.transform.SetParent(transform, false);
+            var ps = go.AddComponent<ParticleSystem>();
+            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            var main = ps.main;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.playOnAwake = false;
+            main.maxParticles = 600;
+            main.gravityModifier = 2.5f; // exaggerated slightly so the droop reads at a distance
+            var em = ps.emission; em.enabled = false;
+            var shape = ps.shape; shape.enabled = false;
+            var col = ps.colorOverLifetime; col.enabled = true;
+            var g = new Gradient();
+            g.SetKeys(new[] { new GradientColorKey(new Color(1f, 0.95f, 0.7f), 0f), new GradientColorKey(new Color(1f, 0.35f, 0.1f), 1f) },
+                      new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(0.8f, 0.5f), new GradientAlphaKey(0f, 1f) });
+            col.color = g;
+            var drag = ps.limitVelocityOverLifetime; drag.enabled = true; drag.dampen = 0.08f; drag.limit = 1000f;
+            var r = go.GetComponent<ParticleSystemRenderer>();
+            r.sharedMaterial = mat;
+            r.renderMode = ParticleSystemRenderMode.Stretch; // motion-stretched, like burning fragments on camera
+            r.velocityScale = 0.025f;
+            r.lengthScale = 1.5f;
             r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             r.receiveShadows = false;
             ps.Play();

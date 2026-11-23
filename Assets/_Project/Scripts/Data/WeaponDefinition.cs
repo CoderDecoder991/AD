@@ -35,10 +35,10 @@ namespace AirDefense.Data
         public float projectileLifetime = 2.2f;
         [Tooltip("Air drag constant k (1/m) in dv/dt = -k|v|v. 23 mm HEI-T ≈ 4.6e-4. 0 = no drag.")]
         public float dragK = 4.6e-4f;
-        [Tooltip("Tracer burn time, seconds (23x152 HEI-T spec: at least 3.5 s). After this the round flies on unseen.")]
-        public float tracerBurnTime = 3.5f;
+        [Tooltip("Tracer burn time, seconds (23 mm OFZT/BZT tracer: about 5-5.4 s). After this the round flies on unseen.")]
+        public float tracerBurnTime = 5.0f;
         [Tooltip("Self-destruct window, seconds (23x152 HEI-T spec: about 5-12 s). 0 = no self-destruct.")]
-        public Vector2 selfDestructTime = new Vector2(5.4f, 8f);
+        public Vector2 selfDestructTime = new Vector2(5.4f, 9f);
         public float damagePerRound = 1f;
         [Tooltip("Random spread, degrees (standard deviation of the cone).")]
         public float dispersion = 0.35f;
