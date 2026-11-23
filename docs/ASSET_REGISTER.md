@@ -27,12 +27,12 @@ Tracks every asset we need, its status and its licence. **Nothing ships without 
 
 | ID | Asset | Needed by | Source | Status | Licence |
 |---|---|---|---|---|---|
-| E-01 | Military base kit (barracks, fences, sandbags, containers, shelters) | M2 | Store | Needed | — |
-| E-02 | Terrain, rocks, sparse vegetation | M2 | Store | Needed | — |
-| E-03 | Night sky / skybox, moon, clouds | M2 | Store / Engine | Needed | — |
-| E-04 | Lighting props: floodlights, searchlights, beacons | M2 | Store | Needed | — |
+| E-01 | Military base kit (barracks, fences, sandbags, containers, shelters) | M2 | Poly Haven props (fence, barriers, crates, ammo boxes, jerrycans, barrel, generator) + world-UV boxes for buildings | Integrated (M2). Reduced via `tools/blender/process_props.py` (e.g. barrier 61k→1.5k tris) | **CC0 1.0**, Poly Haven (polyhaven.com), MD5-verified download 2026-11-23; see `SourceArt/PolyHaven/polyhaven_manifest*.json` |
+| E-02 | Terrain, rocks, sparse vegetation | M2 | Poly Haven textures: Brown Mud Dry (ground/berm), Concrete Floor Worn 001, Concrete Wall 003, Corrugated Iron | Integrated (textures). Rocks/vegetation: Needed | **CC0 1.0**, Poly Haven (polyhaven.com), MD5-verified download 2026-11-23; see `SourceArt/PolyHaven/polyhaven_manifest*.json` |
+| E-03 | Night sky / skybox, moon, clouds | M2 | Poly Haven HDRI "Rogland Clear Night" (2k) + moon directional light | Integrated (M2) | **CC0 1.0**, Poly Haven (polyhaven.com), MD5-verified download 2026-11-23; see `SourceArt/PolyHaven/polyhaven_manifest*.json` |
+| E-04 | Lighting props: floodlights, searchlights, beacons | M2 | Poly Haven Flood Lights, Portable Searchlight (scaled ×6 on masts), Security Light | Integrated (M2) | **CC0 1.0**, Poly Haven (polyhaven.com), MD5-verified download 2026-11-23; see `SourceArt/PolyHaven/polyhaven_manifest*.json` |
 | E-05 | Radar/command interior (cinematic shot 3) | M2 | Store | Needed | — |
-| E-06 | Damage states: fires, rubble, damaged buildings | M2 | Store / Engine | Needed | — |
+| E-06 | Damage states: fires, rubble, damaged buildings | M2 | Engine (`DamageVisuals`: fire, smoke, flickering light per impact) | Fires/smoke integrated (M2); rubble/damaged meshes: Needed | Project-original |
 | E-07 | Day and dusk lighting setups | M5 | Engine | Needed | — |
 
 ## 3. Animations
@@ -50,22 +50,22 @@ Tracks every asset we need, its status and its licence. **Nothing ships without 
 | V-01 | Muzzle flash (ZU, C-RAM, Tunguska guns) | M1 / M3 / M4 | Engine | Needed | — |
 | V-02 | Tracers (GPU-instanced) | M1 | Engine | Needed | — |
 | V-03 | Air bursts, drone destruction, debris | M1 | Engine / Store | Needed | — |
-| V-04 | Ground impacts, fire, smoke columns | M1 | Store / Engine | Needed | — |
+| V-04 | Ground impacts, fire, smoke columns | M1 | Engine (particles, generated soft sprite) | Integrated (M2) | Project-original |
 | V-05 | Missile launch and smoke trail | M4 | Engine | Needed | — |
-| V-06 | Searchlight cones, fog | M2 | Engine | Needed | — |
+| V-06 | Searchlight cones, fog | M2 | Engine (`SearchlightSweep` additive cone; exp² fog) | Integrated (M2) | Project-original |
 | V-07 | Brass ejection | M2 | Engine | Needed | — |
 
 ## 5. Audio
 
 | ID | Asset | Needed by | Source | Status | Licence |
 |---|---|---|---|---|---|
-| S-01 | ZU-23-2 fire, reload, handwheels | M1 | Store SFX library | Needed | — |
+| S-01 | ZU-23-2 fire, reload, handwheels | M1 | `zu23_shot_1-3.wav` from Shotgun 1 / Impact Rash 1 / Pistol 2 (pitched ×0.66-0.72, trimmed); `reload_residue.ogg`, `empty_clip_residue.ogg` | Integrated (M2); handwheels: Needed | **CC0**, "Impacts + Guns SFX", opengameart.org/content/impactsgunsfx; **CC0**, "Residue SFX", opengameart.org/content/residue-sfx |
 | S-02 | C-RAM fire (continuous), spin-up | M3 | Store / designed | Needed | — |
 | S-03 | Tunguska guns, missile launch | M4 | Store / designed | Needed | — |
-| S-04 | Explosions (near, far), impacts | M1 | Store | Needed | — |
+| S-04 | Explosions (near, far), impacts | M1 | `airburst_1-2`, `impact_base`, `distant_rumble` (processed by `tools/audio/make_sfx.py`), `boom_residue.ogg` | Integrated (M2) | **CC0**, "Impacts + Guns SFX", opengameart.org/content/impactsgunsfx; **CC0**, "Residue SFX", opengameart.org/content/residue-sfx |
 | S-05 | Drone and engine loops per threat | M1+ | Store | Needed | — |
-| S-06 | Air-raid siren, klaxon, radar beeps, warning tones | M1 | Store / designed | Needed | — |
-| S-07 | Radio callouts (fictional call signs) + static | M2 | Recorded voice actor or licensed pack | Needed | — |
+| S-06 | Air-raid siren, klaxon, radar beeps, warning tones | M1 | Synthesised by `tools/audio/make_sfx.py` | Integrated (M2) | Project-original |
+| S-07 | Radio callouts (fictional call signs) + static | M2 | Static: synthesised loop. Callouts: voice needed | Static integrated; callouts: Needed | Project-original (static) |
 | S-08 | Night ambience, base machinery | M2 | Store | Needed | — |
 | S-09 | Music: tense ambient, combat layer, results | M2 | Licensed / commissioned | Needed | — |
 | S-10 | UI sounds | M2 | Store | Needed | — |

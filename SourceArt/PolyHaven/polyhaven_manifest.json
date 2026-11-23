@@ -1,0 +1,101 @@
+[
+  {
+    "id": "concrete_road_barrier",
+    "name": "Concrete Road Barrier",
+    "authors": [
+      "Amal Kumar"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/concrete_road_barrier",
+    "bytes": 3750787,
+    "verified_md5": true
+  },
+  {
+    "id": "portable_searchlight",
+    "name": "Portable Searchlight",
+    "authors": [
+      "Elijah Cragg"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/portable_searchlight",
+    "bytes": 1925133,
+    "verified_md5": true
+  },
+  {
+    "id": "flood_lights",
+    "name": "Flood Lights",
+    "authors": [
+      "James Ray Cock"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/flood_lights",
+    "bytes": 6883186,
+    "verified_md5": true
+  },
+  {
+    "id": "security_light",
+    "name": "Security Light",
+    "authors": [
+      "Maximilian Schuster"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/security_light",
+    "bytes": 2390412,
+    "verified_md5": true
+  },
+  {
+    "id": "ammo_box",
+    "name": "Ammo Box",
+    "authors": [
+      "DanKit"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/ammo_box",
+    "bytes": 1472675,
+    "verified_md5": true
+  },
+  {
+    "id": "old_military_crate",
+    "name": "Old Military Crate",
+    "authors": [
+      "Jack Mava"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/old_military_crate",
+    "bytes": 2495423,
+    "verified_md5": true
+  },
+  {
+    "id": "wooden_military_crate",
+    "name": "Wooden Military Crate",
+    "authors": [
+      "Prabhjinder Singh"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/wooden_military_crate",
+    "bytes": 3045519,
+    "verified_md5": true
+  },
+  {
+    "id": "metal_jerrycan_green",
+    "name": "Metal Jerrycan Green",
+    "authors": [
+      "Ulan Cabanilla"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/metal_jerrycan_green",
+    "bytes": 2655089,
+    "verified_md5": true
+  },
+  {
+    "id": "portable_generator",
+    "name": "Portable Generator",
+    "authors": [
+      "James Ray Cock"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/portable_generator",
+    "bytes": 3434440,
+    "verified_md5": true
+  }
+]

@@ -59,8 +59,10 @@ namespace AirDefense.Weapons
             input.ZoomToggleRequested = false;
 
             bool trigger = InputEnabled && input.FireHeld;
+            bool wasReloading = State.Reloading;
             int rounds = State.Tick(dt, trigger);
             for (int i = 0; i < rounds; i++) FireOne();
+            if (!wasReloading && State.Reloading) GameEvents.RaiseReloadStarted(State.Ammo == 0);
 
             float targetFov = Zoomed ? zoomFov : normalFov;
             operatorCamera.fieldOfView = Mathf.Lerp(operatorCamera.fieldOfView, targetFov, 1f - Mathf.Exp(-fovLerpSpeed * dt));

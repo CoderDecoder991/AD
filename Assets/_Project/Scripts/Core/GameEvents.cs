@@ -16,6 +16,10 @@ namespace AirDefense.Core
         public static event Action<Vector3> RoundFired;
         public static event Action<int, string> WaveStarted;
         public static event Action<MissionResult> MissionEnded;
+        /// <summary>bool = the magazine ran empty (vs. a manual early reload).</summary>
+        public static event Action<bool> ReloadStarted;
+
+        public static void RaiseReloadStarted(bool emptied) => ReloadStarted?.Invoke(emptied);
 
         public static void RaiseThreatSpawned(ThreatAgent t) => ThreatSpawned?.Invoke(t);
         public static void RaiseThreatDestroyed(ThreatAgent t) => ThreatDestroyed?.Invoke(t);
@@ -33,6 +37,7 @@ namespace AirDefense.Core
             RoundFired = null;
             WaveStarted = null;
             MissionEnded = null;
+            ReloadStarted = null;
         }
     }
 

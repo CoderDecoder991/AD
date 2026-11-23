@@ -1,0 +1,182 @@
+[
+  {
+    "id": "rogland_clear_night",
+    "name": "Rogland Clear Night",
+    "authors": [
+      "Greg Zaal"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/rogland_clear_night",
+    "bytes": 6838156,
+    "verified_md5": true
+  },
+  {
+    "id": "brown_mud_dry",
+    "name": "Brown Mud Dry",
+    "authors": [
+      "Rob Tuytel"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/brown_mud_dry",
+    "bytes": 3418353,
+    "verified_md5": true
+  },
+  {
+    "id": "concrete_floor_worn_001",
+    "name": "Concrete Floor Worn 001",
+    "authors": [
+      "Dimitrios Savva",
+      "Rico Cilliers"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/concrete_floor_worn_001",
+    "bytes": 536641,
+    "verified_md5": true
+  },
+  {
+    "id": "concrete_wall_003",
+    "name": "Concrete Wall 003",
+    "authors": [
+      "Dimitrios Savva",
+      "Rico Cilliers"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/concrete_wall_003",
+    "bytes": 871082,
+    "verified_md5": true
+  },
+  {
+    "id": "corrugated_iron",
+    "name": "Corrugated Iron",
+    "authors": [
+      "Jenelle van Heerden",
+      "Dimitrios Savva"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/corrugated_iron",
+    "bytes": 2156451,
+    "verified_md5": true
+  },
+  {
+    "id": "modular_chainlink_fence",
+    "name": "Modular Chainlink Fence",
+    "authors": [
+      "James Ray Cock",
+      "Amal Kumar"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/modular_chainlink_fence",
+    "bytes": 7292015,
+    "verified_md5": true
+  },
+  {
+    "id": "concrete_road_barrier",
+    "name": "Concrete Road Barrier",
+    "authors": [
+      "Amal Kumar"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/concrete_road_barrier",
+    "bytes": 2846469,
+    "verified_md5": true
+  },
+  {
+    "id": "portable_searchlight",
+    "name": "Portable Searchlight",
+    "authors": [
+      "Elijah Cragg"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/portable_searchlight",
+    "bytes": 1591167,
+    "verified_md5": true
+  },
+  {
+    "id": "flood_lights",
+    "name": "Flood Lights",
+    "authors": [
+      "James Ray Cock"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/flood_lights",
+    "bytes": 2617234,
+    "verified_md5": true
+  },
+  {
+    "id": "security_light",
+    "name": "Security Light",
+    "authors": [
+      "Maximilian Schuster"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/security_light",
+    "bytes": 2302803,
+    "verified_md5": true
+  },
+  {
+    "id": "ammo_box",
+    "name": "Ammo Box",
+    "authors": [
+      "DanKit"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/ammo_box",
+    "bytes": 752623,
+    "verified_md5": true
+  },
+  {
+    "id": "old_military_crate",
+    "name": "Old Military Crate",
+    "authors": [
+      "Jack Mava"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/old_military_crate",
+    "bytes": 2233975,
+    "verified_md5": true
+  },
+  {
+    "id": "wooden_military_crate",
+    "name": "Wooden Military Crate",
+    "authors": [
+      "Prabhjinder Singh"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/wooden_military_crate",
+    "bytes": 2523742,
+    "verified_md5": true
+  },
+  {
+    "id": "metal_jerrycan_green",
+    "name": "Metal Jerrycan Green",
+    "authors": [
+      "Ulan Cabanilla"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/metal_jerrycan_green",
+    "bytes": 2419235,
+    "verified_md5": true
+  },
+  {
+    "id": "Barrel_01",
+    "name": "Barrel_01",
+    "authors": [
+      "Jorge Camacho"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/Barrel_01",
+    "bytes": 692947,
+    "verified_md5": true
+  },
+  {
+    "id": "portable_generator",
+    "name": "Portable Generator",
+    "authors": [
+      "James Ray Cock"
+    ],
+    "licence": "CC0 1.0",
+    "source": "https://polyhaven.com/a/portable_generator",
+    "bytes": 2770977,
+    "verified_md5": true
+  }
+]

@@ -140,6 +140,12 @@ namespace AirDefense.Threats
         private void BuildPlaceholderBody(Transform root, ThreatDefinition def)
         {
             float s = def.visualScale;
+            if (visuals.navLight != null)
+            {
+                // Blinking red navigation light: keeps threats readable against the night sky.
+                var nav = visuals.Part("NavLight", visuals.sphere, visuals.navLight, root, new Vector3(0f, 0.35f * s, 0f), Vector3.one * 0.55f * s);
+                nav.AddComponent<Environment.NavLightBlink>();
+            }
             switch (def.threatClass)
             {
                 case ThreatClass.SmallDrone:

@@ -24,6 +24,9 @@ namespace AirDefense.UI
         public ThreatManager threats;
         public Camera cam;
         public Progression.WeaponRoster roster;
+        [Tooltip("Copy of CREDITS.md, made by the scene builder.")]
+        public TextAsset credits;
+        private GameObject _credits;
 
         private readonly System.Collections.Generic.List<(Data.WeaponDefinition def, Text state, Image bg)> _tiles =
             new System.Collections.Generic.List<(Data.WeaponDefinition, Text, Image)>();
@@ -308,8 +311,45 @@ namespace AirDefense.UI
                 stress.GetComponentInChildren<Text>().text = "DEV: +20 THREATS (no rewards)";
             }
 
+            var creditsBtn = UiFactory.Button("Credits", card, "CREDITS", 26, () => _credits.SetActive(true));
+            creditsBtn.GetComponent<RectTransform>().Anchor(new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-30f, -30f), new Vector2(200f, 70f));
+
             RefreshSettings();
             _pause.SetActive(false);
+            BuildCredits();
+        }
+
+        /// <summary>Credits and third-party licences (CC-BY requires this; ASSET_REGISTER §8).</summary>
+        private void BuildCredits()
+        {
+            _credits = Overlay("Credits");
+            var card = _credits.transform.Find("Card");
+            var t = UiFactory.Text("Title", card, "CREDITS", 46, TextAnchor.UpperCenter, UiFactory.Accent);
+            t.rectTransform.Stretch(new Vector2(0f, 0.89f), new Vector2(1f, 0.97f));
+            string body = credits != null ? Plain(credits.text) : "Credits file missing.";
+            var b = UiFactory.Text("Body", card, body, 17, TextAnchor.UpperLeft);
+            b.horizontalOverflow = HorizontalWrapMode.Wrap;
+            b.verticalOverflow = VerticalWrapMode.Truncate;
+            b.rectTransform.Stretch(new Vector2(0.05f, 0.17f), new Vector2(0.95f, 0.88f));
+            var close = UiFactory.Button("Close", card, "CLOSE", 34, () => _credits.SetActive(false), new Color(0.15f, 0.45f, 0.2f, 1f));
+            close.GetComponent<RectTransform>().Anchor(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 30f), new Vector2(300f, 90f));
+            _credits.SetActive(false);
+        }
+
+        /// <summary>Strips simple Markdown so the credits read cleanly in-game.</summary>
+        private static string Plain(string md)
+        {
+            var sb = new System.Text.StringBuilder();
+            foreach (string raw in md.Split('\n'))
+            {
+                string l = raw.TrimEnd('\r');
+                if (l.StartsWith("# ")) continue;                 // page title (shown as the header)
+                l = l.Replace("**", "").Replace("`", "");
+                if (l.StartsWith("## ")) l = l.Substring(3).ToUpperInvariant();
+                l = l.Replace("  - ", "     ").Replace("- ", "• ");
+                sb.AppendLine(l);
+            }
+            return sb.ToString().Trim();
         }
 
         private Text Row(Transform card, float y, string label, System.Action minusOrToggle, System.Action plus)

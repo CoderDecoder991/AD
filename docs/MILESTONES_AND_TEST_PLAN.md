@@ -78,7 +78,15 @@ M0 Setup ─► M1 ZU greybox ─► M2 Vertical slice (MVP) ─► M3 C-RAM + s
   - ✅ Edge arrows kept clear of the radar, pause button and bottom controls.
   - ✅ Tests: 22 EditMode + 3 PlayMode passing. On device: briefing credits, tile progress and graphics setting verified; 60 fps steady.
   - ⏳ Not yet verified on device: a full mission paying credits and the balance surviving an app restart (covered by unit tests only).
-  - ⏳ **Part B, blocked on art/audio decisions (O-01, O-02):** night base environment, damage visuals, audio, cinematic animatic, Credits screen, 20-min soak test with final art.
+- **Progress (2026-11-23), M2 part B, using free CC0 assets (user decision):**
+  - ✅ Night base: Poly Haven CC0 night-sky HDRI, ground/concrete/wall/roof textures, chain-link perimeter (~360 segments, static-batched), barriers, crates, ammo boxes, jerrycans, barrels, generators. All reduced for mobile (`tools/blender/process_props.py`).
+  - ✅ Lighting: moonlight, floodlights on the gun pit, security lights on buildings, two sweeping searchlights with fake volumetric beams, fog, bloom/tone-mapping (off on Low tier).
+  - ✅ Damage visuals: fire, smoke and flickering light at each impact (max 8).
+  - ✅ Threat nav lights (blinking red) for night readability.
+  - ✅ Audio: ZU-23-2 shots, air bursts (delayed by distance at the speed of sound), impacts, reload/empty click (CC0 OpenGameArt, processed by `tools/audio/make_sfx.py`); siren, radio static, radar ping, warning tone synthesised.
+  - ✅ In-game Credits screen (pause menu), generated from CREDITS.md.
+  - ✅ On Pad 8: 60 fps steady with the full night base.
+  - ⏳ Remaining for M2: cinematic animatic (Timeline), 20-minute soak test, full-mission credits/save check on device, radio voice callouts (S-07).
 
 ### M3 — C-RAM, switching, autonomy
 - C-RAM battery model and behaviour, the unlock flow.

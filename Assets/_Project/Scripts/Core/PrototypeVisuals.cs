@@ -15,6 +15,8 @@ namespace AirDefense.Core
         public Material tracer;
         public Material explosion;
         public Material impactFlash;
+        [Tooltip("Unlit emissive red, for blinking threat navigation lights.")]
+        public Material navLight;
 
         // Runtime code must not use GameObject.CreatePrimitive: it adds colliders whose
         // classes are stripped from builds when no scene uses physics.

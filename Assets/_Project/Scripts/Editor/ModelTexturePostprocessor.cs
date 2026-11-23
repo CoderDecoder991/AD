@@ -15,15 +15,20 @@ namespace AirDefense.EditorTools
     public sealed class ModelTexturePostprocessor : AssetPostprocessor
     {
         private const string Folder = "Assets/_Project/Art/Models/";
+        private const string TextureFolder = "Assets/_Project/Art/Textures/";
 
         private void OnPreprocessTexture()
         {
-            if (!assetPath.StartsWith(Folder)) return;
+            bool model = assetPath.StartsWith(Folder);
+            bool material = assetPath.StartsWith(TextureFolder);
+            if (!model && !material) return;
             var ti = (TextureImporter)assetImporter;
             ti.mipmapEnabled = true;
             ti.maxTextureSize = 1024;
+            if (material) ti.wrapMode = TextureWrapMode.Repeat;
 
-            Role role = FindRole(assetPath);
+            // Model textures: role from the .gltf. Material sets (Poly Haven naming): role from the file name.
+            Role role = model ? FindRole(assetPath) : RoleFromName(Path.GetFileNameWithoutExtension(assetPath));
             if (role == Role.Normal) ti.textureType = TextureImporterType.NormalMap;
             else if (role == Role.Linear) ti.sRGBTexture = false;
 
@@ -36,6 +41,14 @@ namespace AirDefense.EditorTools
         }
 
         private enum Role { Color, Normal, Linear }
+
+        private static Role RoleFromName(string n)
+        {
+            n = n.ToLowerInvariant();
+            if (n.Contains("_nor_gl") || n.Contains("_normal")) return Role.Normal;
+            if (n.Contains("_rough") || n.Contains("_ao") || n.Contains("_arm") || n.Contains("_metal")) return Role.Linear;
+            return Role.Color;
+        }
 
         [Serializable] private class TexRef { public int index = -1; }
         [Serializable] private class Pbr { public TexRef metallicRoughnessTexture; }

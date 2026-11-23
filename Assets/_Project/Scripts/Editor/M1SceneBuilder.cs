@@ -39,6 +39,7 @@ namespace AirDefense.EditorTools
             AssetDatabase.Refresh();
 
             var mats = CreateMaterials();
+            NightBaseDresser.UpgradeMaterials(mats); // CC0 Poly Haven textures when present (M2)
             var visuals = CreateVisuals(mats);
             var zu = CreateZu23();
             var small = CreateSmallDrone();
@@ -74,9 +75,11 @@ namespace AirDefense.EditorTools
                 ["Fence"] = Mat("PH_Fence", lit, new Color(0.35f, 0.35f, 0.35f)),
                 ["ThreatBody"] = Mat("PH_ThreatBody", lit, new Color(0.18f, 0.18f, 0.20f)),
                 ["ThreatAccent"] = Mat("PH_ThreatAccent", lit, new Color(0.55f, 0.55f, 0.58f)),
-                ["Tracer"] = Mat("PH_Tracer", unlit, new Color(1f, 0.78f, 0.35f)),
-                ["Explosion"] = Mat("PH_Explosion", unlit, new Color(1f, 0.55f, 0.15f)),
-                ["Impact"] = Mat("PH_Impact", unlit, new Color(1f, 0.25f, 0.1f)),
+                // Emissive FX colours are above 1.0 (HDR) so bloom makes them glow at night.
+                ["Tracer"] = Mat("PH_Tracer", unlit, new Color(2.6f, 1.9f, 0.8f)),
+                ["Explosion"] = Mat("PH_Explosion", unlit, new Color(3.0f, 1.5f, 0.4f)),
+                ["Impact"] = Mat("PH_Impact", unlit, new Color(3f, 0.8f, 0.3f)),
+                ["NavLight"] = Mat("PH_NavLight", unlit, new Color(4f, 0.25f, 0.2f)),
             };
         }
 
@@ -104,6 +107,7 @@ namespace AirDefense.EditorTools
             v.tracer = m["Tracer"];
             v.explosion = m["Explosion"];
             v.impactFlash = m["Impact"];
+            v.navLight = m["NavLight"];
             v.cube = Resources.GetBuiltinResource<Mesh>("Cube.fbx");
             v.sphere = Resources.GetBuiltinResource<Mesh>("Sphere.fbx");
             v.cylinder = Resources.GetBuiltinResource<Mesh>("Cylinder.fbx");
@@ -269,28 +273,24 @@ namespace AirDefense.EditorTools
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
-            // Lighting: late-afternoon sun (night lighting arrives with real art in M2).
-            var sun = new GameObject("Sun").AddComponent<Light>();
-            sun.type = LightType.Directional;
-            sun.intensity = 1.2f;
-            sun.color = new Color(1f, 0.93f, 0.82f);
-            sun.shadows = LightShadows.Soft;
-            sun.transform.rotation = Quaternion.Euler(32f, 150f, 0f);
-            RenderSettings.ambientMode = AmbientMode.Skybox;
+            // Night lighting: moon, CC0 night-sky HDRI, trilight ambient, fog (M2).
+            var moon = new GameObject("Moon").AddComponent<Light>();
+            NightBaseDresser.NightLighting(moon);
 
-            var env = new GameObject("Environment (PLACEHOLDER)").transform;
+            var env = new GameObject("Environment").transform;
             var center = new GameObject("InstallationCenter").transform;
             center.SetParent(env, false);
 
             Prim(env, "Ground", PrimitiveType.Plane, new Vector3(0, 0, 0), new Vector3(500, 1, 500), m["Ground"], false);
-            Prim(env, "Apron", PrimitiveType.Cube, new Vector3(0, 0.02f, 10), new Vector3(150, 0.04f, 130), m["Concrete"], false);
+            NightBaseDresser.Box(env, "Apron", new Vector3(0, 0.02f, 10), new Vector3(150, 0.04f, 130), m["Concrete"], 4f);
 
-            // Buildings; their roofs are the threats' target points.
+            // Buildings (world-UV boxes so textures keep real scale); roofs are the threats' target points.
             var targets = new List<Transform>();
             void Building(string n, Vector3 pos, Vector3 size)
             {
-                var b = Prim(env, n, PrimitiveType.Cube, pos + Vector3.up * size.y / 2f, size, m["Building"], true);
-                Prim(b.transform, "Roof", PrimitiveType.Cube, new Vector3(0, 0.5f, 0), new Vector3(1.04f, 0.04f / size.y, 1.04f), m["Roof"], true);
+                var b = NightBaseDresser.Box(env, n, pos + Vector3.up * size.y / 2f, size, m["Building"], 4f);
+                b.GetComponent<MeshRenderer>().shadowCastingMode = ShadowCastingMode.On;
+                NightBaseDresser.Box(env, n + "_Roof", pos + Vector3.up * (size.y + 0.15f), new Vector3(size.x * 1.04f, 0.3f, size.z * 1.04f), m["Roof"], 2.5f);
                 var tp = new GameObject(n + "_Target").transform;
                 tp.SetParent(env, false);
                 tp.position = pos + Vector3.up * (size.y + 0.5f);
@@ -307,18 +307,22 @@ namespace AirDefense.EditorTools
             var mast = Prim(env, "RadarMast", PrimitiveType.Cylinder, new Vector3(-8, 10, 45), new Vector3(1, 10, 1), m["Fence"], true);
             Prim(mast.transform, "Dish", PrimitiveType.Cube, new Vector3(0, 1.05f, 0), new Vector3(8, 0.15f, 2.5f), m["GunDark"], true);
 
-            // Perimeter fence (square, 180 m side).
-            for (int side = 0; side < 4; side++)
-            {
-                Quaternion r = Quaternion.Euler(0, side * 90f, 0);
-                var f = Prim(env, "Fence_" + side, PrimitiveType.Cube, r * new Vector3(0, 1.2f, 90), new Vector3(180, 2.4f, 0.2f), m["Fence"], false);
-                f.transform.rotation = r;
-            }
+            // Perimeter fence (square, 180 m side): CC0 chain-link segments, greybox wall if missing.
+            if (AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Art/Models/Props/fence_segment/fence_segment.gltf") != null)
+                NightBaseDresser.PerimeterFence(env, 90f);
+            else
+                for (int side = 0; side < 4; side++)
+                {
+                    Quaternion r = Quaternion.Euler(0, side * 90f, 0);
+                    var f = Prim(env, "Fence_" + side, PrimitiveType.Cube, r * new Vector3(0, 1.2f, 90), new Vector3(180, 2.4f, 0.2f), m["Fence"], false);
+                    f.transform.rotation = r;
+                }
 
             // Gun position south of the buildings on a 14 m earth berm, so the
             // operator sees over the rooftops (buildings are 6-12 m tall). Facing north.
             const float bermHeight = 14f;
-            Prim(env, "GunBerm", PrimitiveType.Cube, new Vector3(0, bermHeight / 2f, -60), new Vector3(16, bermHeight, 16), m["Sandbag"], true);
+            NightBaseDresser.Box(env, "GunBerm", new Vector3(0, bermHeight / 2f, -60), new Vector3(16, bermHeight, 16), m["Sandbag"], 3f)
+                .GetComponent<MeshRenderer>().shadowCastingMode = ShadowCastingMode.On;
             var gunRoot = new GameObject("ZU-23-2").transform;
             gunRoot.position = new Vector3(0, bermHeight, -60);
             Prim(gunRoot, "Platform", PrimitiveType.Cylinder, new Vector3(0, 0.1f, 0), new Vector3(7, 0.1f, 7), m["Concrete"], false);
@@ -350,6 +354,12 @@ namespace AirDefense.EditorTools
             cam.farClipPlane = 6000f;
             camGo.AddComponent<AudioListener>();
             camGo.transform.SetPositionAndRotation(camAnchor.position, camAnchor.rotation);
+            NightBaseDresser.PostProcessing(cam);
+
+            // Props, practical lights and searchlights (CC0 Poly Haven).
+            var beamMat = NightBaseDresser.AdditiveParticleMaterial("SearchlightBeam", Texture2D.whiteTexture);
+            beamMat.SetTexture("_BaseMap", null); // vertex alpha drives the fade; cone has no UVs
+            NightBaseDresser.DressBase(env, gunRoot, bermHeight, beamMat);
 
             // Systems.
             var systems = new GameObject("Systems").transform;
@@ -382,8 +392,23 @@ namespace AirDefense.EditorTools
             director.projectiles = proj;
             director.player = ctrl;
 
-            var audio = new GameObject("Audio (procedural placeholder)").AddComponent<ProceduralAudio>();
-            audio.transform.SetParent(systems, false);
+            var bank = CreateAudioBank();
+            if (bank != null)
+            {
+                var sfx = new GameObject("Audio").AddComponent<SfxPlayer>();
+                sfx.transform.SetParent(systems, false);
+                sfx.bank = bank;
+                sfx.listener = camGo.transform;
+            }
+            else
+            {
+                var audio = new GameObject("Audio (procedural placeholder)").AddComponent<ProceduralAudio>();
+                audio.transform.SetParent(systems, false);
+            }
+
+            var damage = new GameObject("DamageVisuals").AddComponent<Environment.DamageVisuals>();
+            damage.transform.SetParent(systems, false);
+            damage.particleMaterial = NightBaseDresser.AlphaParticleMaterial("SmokeFire", NightBaseDresser.SoftDotAsset());
 
             var hud = new GameObject("HUD").AddComponent<HudController>();
             hud.director = director;
@@ -392,6 +417,7 @@ namespace AirDefense.EditorTools
             hud.threats = threatMgr;
             hud.cam = cam;
             hud.roster = roster;
+            hud.credits = CreditsText();
 
             EditorSceneManager.SaveScene(scene, ScenePath);
 
@@ -399,6 +425,42 @@ namespace AirDefense.EditorTools
             var scenes = EditorBuildSettings.scenes.Where(s => s.path != ScenePath).ToList();
             scenes.Insert(0, new EditorBuildSettingsScene(ScenePath, true));
             EditorBuildSettings.scenes = scenes.ToArray();
+        }
+
+        // ---------------------------------------------------------- audio + credits
+
+        private const string SfxDir = Root + "/Audio/SFX/";
+
+        /// <summary>Audio bank from Assets/_Project/Audio/SFX (built by tools/audio/make_sfx.py). Null if missing.</summary>
+        private static AudioBank CreateAudioBank()
+        {
+            AudioClip C(string file) => AssetDatabase.LoadAssetAtPath<AudioClip>(SfxDir + file);
+            if (C("zu23_shot_1.wav") == null) return null;
+            var b = LoadOrCreate<AudioBank>($"{DataDir}/AudioBank.asset", out _);
+            b.zuShots = new[] { C("zu23_shot_1.wav"), C("zu23_shot_2.wav"), C("zu23_shot_3.wav") };
+            b.airbursts = new[] { C("airburst_1.wav"), C("airburst_2.wav") };
+            b.impactBase = C("impact_base.wav");
+            b.boom = C("boom_residue.ogg");
+            b.distantRumble = C("distant_rumble.wav");
+            b.reload = C("reload_residue.ogg");
+            b.emptyClick = C("empty_clip_residue.ogg");
+            b.siren = C("siren.wav");
+            b.warningTone = C("warning_tone.wav");
+            b.radarPing = C("radar_ping.wav");
+            b.radioStaticLoop = C("radio_static_loop.wav");
+            EditorUtility.SetDirty(b);
+            return b;
+        }
+
+        /// <summary>Copies CREDITS.md (single source of truth) into a TextAsset the game can show.</summary>
+        private static TextAsset CreditsText()
+        {
+            const string src = "CREDITS.md";
+            const string dst = DataDir + "/Credits.txt";
+            if (!File.Exists(src)) return null;
+            File.WriteAllText(dst, File.ReadAllText(src));
+            AssetDatabase.ImportAsset(dst);
+            return AssetDatabase.LoadAssetAtPath<TextAsset>(dst);
         }
 
         // ------------------------------------------------------------- gun rigs
