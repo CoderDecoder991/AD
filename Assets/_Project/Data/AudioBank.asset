@@ -18,6 +18,8 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 29fefed266c91fa4f8f6b6934b9c4846, type: 3}
   - {fileID: 8300000, guid: befb76185a4a5714389e618cfd4bcfce, type: 3}
   zuBurstTail: {fileID: 8300000, guid: 1172e9d69dbd3854497044a7663793c5, type: 3}
+  zuFirstShot: {fileID: 8300000, guid: 113a944fa9518384b9e1253344a211ff, type: 3}
+  zuBurstLoop: {fileID: 8300000, guid: 553d39db907d6314d81781e46dfdd4f2, type: 3}
   airbursts:
   - {fileID: 8300000, guid: d316e9af94258ac4888000d7e6704427, type: 3}
   - {fileID: 8300000, guid: 6cd32d07c45ca5d4185602ef4452fdb6, type: 3}

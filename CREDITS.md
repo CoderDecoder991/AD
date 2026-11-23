@@ -15,6 +15,7 @@ listing or a linked page. Full asset tracking is in `docs/ASSET_REGISTER.md`.
 ## Sound
 - "Impacts + Guns SFX" (opengameart.org/content/impactsgunsfx), CC0. Pitched, trimmed and filtered.
 - "Residue SFX" (opengameart.org/content/residue-sfx), CC0.
+- Autocannon firing recording: original recording by the game's creator.
 - Siren, radio static, radar ping and warning tone: original, generated for this game.
 
 ## Software

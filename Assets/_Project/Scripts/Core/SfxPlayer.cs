@@ -20,6 +20,8 @@ namespace AirDefense.Core
 
         private AudioSource _gun;
         private AudioSource _gunB;
+        private AudioSource _loop;
+        private bool _loopFading;
         private int _lastShot = -1;
         private int _burstRounds;
         private float _lastRoundTime;
@@ -36,6 +38,9 @@ namespace AirDefense.Core
             _gun.panStereo = -0.12f;
             _gunB = NewSource("Gun R");
             _gunB.panStereo = 0.12f;
+            _loop = NewSource("Gun Loop");
+            _loop.loop = true;
+            _loop.priority = 0; // never stolen by other sounds
             _ui = NewSource("Alerts");
             _siren = NewSource("Siren");
             _ambience = NewSource("Ambience");
@@ -89,6 +94,28 @@ namespace AirDefense.Core
 
         private void OnRoundFired(Vector3 _)
         {
+            _lastRoundTime = Time.time;
+            if (bank.zuBurstLoop != null)
+            {
+                // Real recording: opening shot on the first round, then the sustained-fire loop.
+                _burstRounds++;
+                if (_burstRounds == 1)
+                {
+                    _gun.pitch = Random.Range(0.98f, 1.02f);
+                    _gun.PlayOneShot(bank.zuFirstShot, bank.gunVolume);
+                }
+                else if (_burstRounds == 2)
+                {
+                    _loop.clip = bank.zuBurstLoop;
+                    _loop.volume = bank.gunVolume;
+                    _loop.pitch = 1f;
+                    _loop.time = 0f;
+                    _loop.Play();
+                    _loopFading = false;
+                }
+                return;
+            }
+
             if (bank.zuShots == null || bank.zuShots.Length == 0) return;
             // Barrels fire alternately: each round plays, panned slightly to its barrel's side.
             AudioSource s = (_roundCount++ & 1) == 0 ? _gun : _gunB;
@@ -103,12 +130,18 @@ namespace AirDefense.Core
 
         private void Update()
         {
-            // Burst ended: play the rolling echo, stronger after longer bursts.
-            if (_burstRounds > 0 && Time.time - _lastRoundTime > 0.09f)
+            // Burst ended: stop the loop with a quick fade and play the rolling echo (stronger after longer bursts).
+            if (_burstRounds > 0 && Time.time - _lastRoundTime > 0.07f)
             {
+                if (_loop.isPlaying) _loopFading = true;
                 if (bank.zuBurstTail != null)
                     _ui.PlayOneShot(bank.zuBurstTail, bank.gunVolume * Mathf.Clamp(_burstRounds / 12f, 0.35f, 1f));
                 _burstRounds = 0;
+            }
+            if (_loopFading)
+            {
+                _loop.volume -= bank.gunVolume * Time.deltaTime / 0.04f; // 40 ms release
+                if (_loop.volume <= 0.001f) { _loop.Stop(); _loopFading = false; }
             }
         }
 
@@ -148,6 +181,7 @@ namespace AirDefense.Core
 
         private void OnMissionEnded(MissionResult _)
         {
+            _loop.Stop();
             _siren.Stop();
             _ambience.volume = bank.ambienceVolume * 0.5f;
         }

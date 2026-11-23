@@ -59,9 +59,9 @@ Tracks every asset we need, its status and its licence. **Nothing ships without 
 
 | ID | Asset | Needed by | Source | Status | Licence |
 |---|---|---|---|---|---|
-| S-01 | ZU-23-2 fire, reload, handwheels | M1 | `zu23_round_1-4.wav`: layered: crack (first 30 ms of Shotgun 1, high-passed) + synthesised boom/body/clank/early reflections; `zu23_tail.wav` synthesised burst echo (older `zu23_shot_1-3` kept as fallback); `reload_residue.ogg`, `empty_clip_residue.ogg` | Integrated (M2); handwheels: Needed | **CC0**, "Impacts + Guns SFX", opengameart.org/content/impactsgunsfx; **CC0**, "Residue SFX", opengameart.org/content/residue-sfx |
+| S-01 | ZU-23-2 fire, reload, handwheels | M1 | **User's own recording** `SourceArt/Audio/User/tunguska_firing.mp3` (2.18 s, ~29.5 shots/s) cut by `tools/audio/make_user_burst.py` into `zu23_first_shot.wav` + seamless `zu23_burst_loop.wav` (pitched x1.05 for the smaller calibre); synthesised `zu23_tail.wav`; reload/empty click from Residue SFX. Older layered rounds kept as fallback | Integrated (M2); handwheels: Needed | User-owned (stated by user 2026-11-23: "my own creation"); Residue SFX CC0 |
 | S-02 | C-RAM fire (continuous), spin-up | M3 | Store / designed | Needed | — |
-| S-03 | Tunguska guns, missile launch | M4 | Store / designed | Needed | — |
+| S-03 | Tunguska guns, missile launch | M4 | Guns: user's own recording, unpitched `tunguska_first_shot.wav` + `tunguska_burst_loop.wav` (ready). Missile launch: Needed | Guns ready; missile: Needed | User-owned (guns) |
 | S-04 | Explosions (near, far), impacts | M1 | `airburst_1-2`, `impact_base`, `distant_rumble` (processed by `tools/audio/make_sfx.py`), `boom_residue.ogg` | Integrated (M2) | **CC0**, "Impacts + Guns SFX", opengameart.org/content/impactsgunsfx; **CC0**, "Residue SFX", opengameart.org/content/residue-sfx |
 | S-05 | Drone and engine loops per threat | M1+ | Store | Needed | — |
 | S-06 | Air-raid siren, klaxon, radar beeps, warning tones | M1 | Synthesised by `tools/audio/make_sfx.py` | Integrated (M2) | Project-original |

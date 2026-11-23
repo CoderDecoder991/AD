@@ -479,6 +479,9 @@ namespace AirDefense.EditorTools
                 ? new[] { C("zu23_round_1.wav"), C("zu23_round_2.wav"), C("zu23_round_3.wav"), C("zu23_round_4.wav") }
                 : new[] { C("zu23_shot_1.wav"), C("zu23_shot_2.wav"), C("zu23_shot_3.wav") };
             b.zuBurstTail = C("zu23_tail.wav");
+            // User's own Tunguska recording, pitched for the ZU (tools/audio/make_user_burst.py). Null = per-round fallback.
+            b.zuFirstShot = C("zu23_first_shot.wav");
+            b.zuBurstLoop = C("zu23_burst_loop.wav");
             b.gunVolume = 0.45f; // every round now plays (not one per pair)
             b.airbursts = new[] { C("airburst_1.wav"), C("airburst_2.wav") };
             b.impactBase = C("impact_base.wav");

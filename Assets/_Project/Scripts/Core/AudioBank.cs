@@ -12,6 +12,10 @@ namespace AirDefense.Core
         public AudioClip[] zuShots;
         [Tooltip("Rolling echo played when a burst ends.")]
         public AudioClip zuBurstTail;
+        [Tooltip("Real recording: single opening shot (user's own recording, see ASSET_REGISTER S-01).")]
+        public AudioClip zuFirstShot;
+        [Tooltip("Real recording: seamless sustained-fire loop. When set, it replaces per-round shots.")]
+        public AudioClip zuBurstLoop;
         public AudioClip[] airbursts;
         public AudioClip impactBase;
         public AudioClip boom;
