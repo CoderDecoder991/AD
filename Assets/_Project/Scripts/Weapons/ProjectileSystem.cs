@@ -190,6 +190,14 @@ namespace AirDefense.Weapons
         /// "dumb-bell" of two lobes along the shell path. No falling sparks: that reads as a firework.
         /// </summary>
         /// <param name="metresPerPixel">World size of one screen pixel at the burst distance.</param>
+        /// <summary>An airburst at a position (used by the opening cinematic for distant flak).</summary>
+        public void SpawnAirburst(Vector3 pos, float distanceFromCamera)
+        {
+            Camera cam = viewCamera != null ? viewCamera : Camera.main;
+            float px = cam != null ? 2f * Mathf.Tan(cam.fieldOfView * 0.5f * Mathf.Deg2Rad) / Mathf.Max(1, Screen.height) : 0.001f;
+            SelfDestructBurst(pos, Vector3.zero, distanceFromCamera * px);
+        }
+
         private void SelfDestructBurst(Vector3 pos, Vector3 shellVelocity, float metresPerPixel)
         {
             GameEvents.RaiseRoundSelfDestructed(pos);

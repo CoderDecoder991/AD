@@ -222,6 +222,17 @@ def main():
     s[:4410] = head * np.linspace(0, 1, 4410) + tail * np.linspace(1, 0, 4410)
     write_wav(os.path.join(out, "radio_static_loop.wav"), normalise(s, -12))
 
+    # Radio squelch: key-up click, a burst of band-limited static, key-down click (under subtitled radio lines).
+    sq = np.zeros(int(0.5 * SR), dtype=np.float32)
+    nz = rng.normal(0, 1, len(sq)).astype(np.float32)
+    band = lowpass(nz, 2800) - lowpass(nz, 450)
+    env = np.interp(np.arange(len(sq)) / SR, [0, 0.01, 0.38, 0.45, 0.5], [0, 1, 0.8, 0.3, 0])
+    sq += band * env * 0.6
+    for at in (0.0, 0.44):
+        i = int(at * SR)
+        sq[i:i + 60] += np.hanning(60).astype(np.float32) * 0.9
+    write_wav(os.path.join(out, "radio_squelch.wav"), normalise(sq, -6))
+
     # Radar ping and warning tone.
     tt = t(0.18)
     ping = np.sin(2 * np.pi * 1350 * tt) * np.exp(-tt * 22)

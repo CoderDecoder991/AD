@@ -310,7 +310,39 @@ namespace AirDefense.EditorTools
             for (int i = 0; i < 3; i++)
                 Prim(env, "FuelTank_" + i, PrimitiveType.Cylinder, new Vector3(62 + i * 9, 4, -45), new Vector3(7, 4, 7), m["Concrete"], true);
             var mast = Prim(env, "RadarMast", PrimitiveType.Cylinder, new Vector3(-8, 10, 45), new Vector3(1, 10, 1), m["Fence"], true);
-            Prim(mast.transform, "Dish", PrimitiveType.Cube, new Vector3(0, 1.05f, 0), new Vector3(8, 0.15f, 2.5f), m["GunDark"], true);
+            // Dish as its own object (not under the stretched mast) so it can rotate without distorting.
+            var radarDish = Prim(env, "RadarDish", PrimitiveType.Cube, new Vector3(-8, 20.6f, 45), new Vector3(8, 1.2f, 0.4f), m["GunDark"], true).transform;
+            radarDish.gameObject.AddComponent<Spin>().degreesPerSecond = new Vector3(0f, 36f, 0f);
+            GameObjectUtility.SetStaticEditorFlags(radarDish.gameObject, 0);
+
+            // Red alarm beacons on the rooftops: flash once the base goes to alert.
+            void Beacon(Vector3 p)
+            {
+                var b = new GameObject("AlarmBeacon").transform;
+                b.SetParent(env, false);
+                b.position = p;
+                var bulb = new GameObject("Bulb");
+                bulb.transform.SetParent(b, false);
+                bulb.transform.localScale = Vector3.one * 0.45f;
+                bulb.AddComponent<MeshFilter>().sharedMesh = Resources.GetBuiltinResource<Mesh>("Sphere.fbx");
+                var br = bulb.AddComponent<MeshRenderer>();
+                br.sharedMaterial = m["NavLight"];
+                br.shadowCastingMode = ShadowCastingMode.Off;
+                var l = new GameObject("BeaconLight").AddComponent<Light>();
+                l.transform.SetParent(b, false);
+                l.type = LightType.Point;
+                l.color = new Color(1f, 0.12f, 0.08f);
+                l.range = 22f;
+                l.intensity = 0f;
+                l.shadows = LightShadows.None;
+                var ab = b.gameObject.AddComponent<Environment.AlarmBeacon>();
+                ab.lamp = l;
+                ab.bulb = br;
+            }
+            Beacon(new Vector3(0f, 8.6f, 25f));
+            Beacon(new Vector3(-40f, 6.6f, 30f));
+            Beacon(new Vector3(-35f, 12.6f, -10f));
+            Beacon(new Vector3(38f, 7.6f, -8f));
 
             // Perimeter fence (square, 180 m side): CC0 chain-link segments, greybox wall if missing.
             if (AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Art/Models/Props/fence_segment/fence_segment.gltf") != null)
@@ -445,6 +477,31 @@ namespace AirDefense.EditorTools
             hud.cam = cam;
             hud.roster = roster;
             hud.credits = CreditsText();
+
+            // Opening cinematic (CINEMATIC_OPENING.md): plays on first launch, hands over to Mission 1.
+            var cineGo = new GameObject("OpeningCinematic");
+            cineGo.transform.SetParent(systems, false);
+            var cine = cineGo.AddComponent<Cinematic.CinematicDirector>();
+            cine.cam = cam;
+            cine.player = ctrl;
+            cine.director = director;
+            cine.hud = hud;
+            cine.projectiles = proj;
+            cine.bank = bank;
+            cine.radioSquelch = AssetDatabase.LoadAssetAtPath<AudioClip>(SfxDir + "radio_squelch.wav");
+            cine.navLightMaterial = m["NavLight"];
+            cine.sphereMesh = Resources.GetBuiltinResource<Mesh>("Sphere.fbx");
+            cine.radarDish = radarDish;
+            cine.gunRoot = gunRoot;
+            Transform FindModel(string root, string child)
+            {
+                var r = GameObject.Find(root);
+                if (r == null) return null;
+                var c = r.transform.Find(child);
+                return c != null ? c : r.transform;
+            }
+            cine.cram = FindModel("C-RAM (display until M3)", "CRAM");
+            cine.tunguska = FindModel("2K22 Tunguska (display until M4)", "Tunguska");
 
             EditorSceneManager.SaveScene(scene, ScenePath);
 

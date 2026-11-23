@@ -86,7 +86,9 @@ M0 Setup ─► M1 ZU greybox ─► M2 Vertical slice (MVP) ─► M3 C-RAM + s
   - ✅ Audio: ZU-23-2 shots, air bursts (delayed by distance at the speed of sound), impacts, reload/empty click (CC0 OpenGameArt, processed by `tools/audio/make_sfx.py`); siren, radio static, radar ping, warning tone synthesised.
   - ✅ In-game Credits screen (pause menu), generated from CREDITS.md.
   - ✅ On Pad 8: 60 fps steady with the full night base.
-  - ⏳ Remaining for M2: cinematic animatic (Timeline), 20-minute soak test, full-mission credits/save check on device, radio voice callouts (S-07).
+  - ✅ Opening cinematic (45 s, 6 shots, skippable, replayable, seamless hand-over to Mission 1); see CINEMATIC_OPENING.md §7.
+  - ✅ Credits and save verified on device (credits accumulated across sessions; C-RAM became "ready to unlock").
+  - ⏳ Remaining for M2: 20-minute soak test, radio voice callouts (S-07), Low-tier cinematic variant.
 
 ### M3 — C-RAM, switching, autonomy
 - C-RAM battery model and behaviour, the unlock flow.

@@ -50,3 +50,21 @@ To keep cost realistic, people appear in silhouette, at a distance, or in partia
 - Holds the tier's frame-rate target on the Pad 8.
 - Replay is available from the menu after first viewing.
 - Radio lines are subtitled.
+
+## 7. Implementation (2026-11-23, M2)
+`Assets/_Project/Scripts/Cinematic/CinematicDirector.cs`, built into the gameplay scene by the scene builder.
+
+| Shot | Time | As built |
+|---|---|---|
+| 1 | 0–5 s | Black + letterbox; radio squelch + subtitle "...Northgate, Sentinel... multiple contacts... bearing zero-four-five..."; warning tone 3 s; siren from 3.8 s |
+| 2 | 5–13 s | Low push-in from outside the south-east fence toward the hills and night sky; searchlights crossing; two distant flak bursts over the hills (9.6 s, 11.1 s) with delayed pops |
+| 3 | 13–21 s | Radar mast with rotating dish; radar-scope overlay (sweep, contacts 1→6, "UNKNOWN CONTACTS x6"); alert raised: red rooftop beacons start; "air raid warning red" subtitle |
+| 4 | 21–30 s | Cuts: C-RAM on its mound, 2K22 Tunguska, then the ZU pit as its floodlights switch on (flicker in) |
+| 5 | 30–39 s | Low dolly around the ZU-23-2 to behind it; barrels elevate; blinking contact far north-east; "Gun One... weapons free" |
+| 6 | 39–45 s | Blend into the live third-person camera; letterbox opens; HUD reveals in stages (radar → "AIR RAID WARNING RED" → weapon tiles/ammo → controls); Mission 1 starts |
+
+- Plays automatically on first launch only (`cinematicSeen` in the save); **SKIP** after 1 s jumps to the hand-over; **REPLAY OPENING** in the pause menu.
+- No voice actor yet: radio lines are subtitles over a synthesised squelch (S-07 voice still needed).
+- No animated people yet (A-01): personnel shots replaced by equipment shots (C-RAM, Tunguska, floodlights).
+- Low-tier shortened version: not built yet.
+- Verified on Xiaomi Pad 8: 60 fps throughout, all shots recorded and reviewed.

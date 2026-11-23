@@ -75,6 +75,13 @@ namespace AirDefense.UI
             BuildPause();
             BuildEnd();
             player.InputEnabled = false;
+            if (Cinematic.CinematicDirector.Playing)
+            {
+                // The opening cinematic hands over to Mission 1 directly: no briefing card, HUD hidden
+                // until the staged reveal (CINEMATIC_OPENING.md shot 6).
+                _briefing.SetActive(false);
+                SetHudStageAlpha(0, 0f); SetHudStageAlpha(1, 0f); SetHudStageAlpha(2, 0f); SetHudStageAlpha(3, 0f);
+            }
             GameEvents.MissionEnded += OnMissionEnded;
             GameEvents.WaveStarted += OnWaveStarted;
             GameEvents.ThreatImpacted += OnImpacted;
@@ -320,6 +327,12 @@ namespace AirDefense.UI
 
             var creditsBtn = UiFactory.Button("Credits", card, "CREDITS", 26, () => _credits.SetActive(true));
             creditsBtn.GetComponent<RectTransform>().Anchor(new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-30f, -30f), new Vector2(200f, 70f));
+            var replay = UiFactory.Button("ReplayOpening", card, "REPLAY OPENING", 22, () =>
+            {
+                Cinematic.CinematicDirector.ForceNextLoad = true;
+                Restart();
+            });
+            replay.GetComponent<RectTransform>().Anchor(new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(30f, -30f), new Vector2(240f, 70f));
 
             RefreshSettings();
             _pause.SetActive(false);
@@ -444,6 +457,52 @@ namespace AirDefense.UI
             Vector3 sp = cam.WorldToScreenPoint(player.AimPoint);
             _crosshair.gameObject.SetActive(sp.z > 0f);
             _crosshair.anchoredPosition = new Vector2(sp.x, sp.y) / _canvas.scaleFactor;
+        }
+
+        // ------------------------------------------------------- cinematic hand-over
+
+        /// <summary>
+        /// HUD elements grouped for the staged reveal: 0 radar + health, 1 warning banner,
+        /// 2 weapon status (tiles, ammo), 3 controls and aiming aids.
+        /// </summary>
+        private static int StageOf(string name)
+        {
+            if (name == "Radar" || name == "HealthBar") return 0;
+            if (name == "Banner") return 1;
+            if (name.StartsWith("Tile_") || name == "Ammo") return 2;
+            if (name == "Briefing" || name == "Pause" || name == "AfterAction" || name == "Credits") return -1;
+            return 3;
+        }
+
+        private void SetHudStageAlpha(int stage, float alpha)
+        {
+            foreach (Transform child in _safe)
+            {
+                if (StageOf(child.name) != stage) continue;
+                var cg = child.GetComponent<CanvasGroup>() ?? child.gameObject.AddComponent<CanvasGroup>();
+                cg.alpha = alpha;
+                cg.interactable = cg.blocksRaycasts = alpha > 0.5f;
+            }
+        }
+
+        /// <summary>Called by the cinematic at the hand-over: reveal the HUD in stages, then start Mission 1.</summary>
+        public void RevealAfterCinematic(Cinematic.CinematicDirector cinematic) => StartCoroutine(Reveal(cinematic));
+
+        private System.Collections.IEnumerator Reveal(Cinematic.CinematicDirector cinematic)
+        {
+            float[] at = { 0.2f, 1.0f, 1.8f, 2.6f };
+            for (int stage = 0; stage < 4; stage++)
+            {
+                while (cinematic.HandoverElapsed < at[stage]) yield return null;
+                for (float a = 0f; a <= 1f; a += Time.unscaledDeltaTime / 0.35f)
+                {
+                    SetHudStageAlpha(stage, a);
+                    yield return null;
+                }
+                SetHudStageAlpha(stage, 1f);
+                if (stage == 1) Banner("AIR RAID WARNING RED", 2.5f, UiFactory.Danger);
+            }
+            StartMission();
         }
 
         private void UpdatePrompts()
