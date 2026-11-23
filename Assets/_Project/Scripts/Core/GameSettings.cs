@@ -4,30 +4,35 @@ namespace AirDefense.Core
 {
     public enum AimAssist { Off = 0, Light = 1 }
 
-    /// <summary>Player settings stored in PlayerPrefs. Replaced by the save system in M2.</summary>
+    /// <summary>Player settings, stored in the saved profile (SaveService).</summary>
     public static class GameSettings
     {
-        private const string KeySensitivity = "aim.sensitivity";
-        private const string KeyInvertY = "aim.invertY";
-        private const string KeyAssist = "aim.assist";
+        private static SettingsData S => ProfileStore.Profile.settings;
 
         public static float Sensitivity
         {
-            get => PlayerPrefs.GetFloat(KeySensitivity, 1f);
-            set { PlayerPrefs.SetFloat(KeySensitivity, Mathf.Clamp(value, 0.2f, 3f)); PlayerPrefs.Save(); }
+            get => S.aimSensitivity;
+            set { S.aimSensitivity = Mathf.Clamp(value, 0.2f, 3f); ProfileStore.Save(); }
         }
 
         public static bool InvertY
         {
-            get => PlayerPrefs.GetInt(KeyInvertY, 0) == 1;
-            set { PlayerPrefs.SetInt(KeyInvertY, value ? 1 : 0); PlayerPrefs.Save(); }
+            get => S.invertY;
+            set { S.invertY = value; ProfileStore.Save(); }
         }
 
         /// <summary>Light assist shows a lead indicator for the target nearest the sight.</summary>
         public static AimAssist Assist
         {
-            get => (AimAssist)PlayerPrefs.GetInt(KeyAssist, (int)AimAssist.Light);
-            set { PlayerPrefs.SetInt(KeyAssist, (int)value); PlayerPrefs.Save(); }
+            get => (AimAssist)S.aimAssist;
+            set { S.aimAssist = (int)value; ProfileStore.Save(); }
+        }
+
+        /// <summary>-1 = automatic, otherwise a forced <see cref="QualityTier"/>.</summary>
+        public static int QualityOverride
+        {
+            get => S.qualityOverride;
+            set { S.qualityOverride = value; ProfileStore.Save(); QualityTiers.Apply(); }
         }
     }
 }

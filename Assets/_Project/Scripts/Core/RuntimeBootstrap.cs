@@ -18,6 +18,9 @@ namespace AirDefense.Core
             Application.targetFrameRate = TargetFrameRate;
             Screen.sleepTimeout = SleepTimeout.NeverSleep;
 
+            ProfileStore.Load();
+            QualityTiers.Apply(); // may lower targetFrameRate to 30 on the Low tier
+
             if (Debug.isDebugBuild || Application.isEditor)
             {
                 var go = new GameObject("[DiagnosticsOverlay]");

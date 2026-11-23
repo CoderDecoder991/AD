@@ -86,10 +86,7 @@ namespace AirDefense.UI
                     if (!inFront) dir = -dir;
                     if (dir.sqrMagnitude < 1f) dir = Vector2.up;
                     dir.Normalize();
-                    Vector2 margin = new Vector2(60f, 60f) * scale;
-                    Vector2 half = centre - margin;
-                    float k = Mathf.Min(half.x / Mathf.Max(1e-4f, Mathf.Abs(dir.x)), half.y / Mathf.Max(1e-4f, Mathf.Abs(dir.y)));
-                    Vector2 edge = centre + dir * k;
+                    Vector2 edge = EdgePoint(centre, dir, screen, scale);
                     mk.root.anchoredPosition = edge / scale;
                     mk.arrow.rectTransform.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg - 90f);
                     mk.bracket.enabled = false;
@@ -103,6 +100,30 @@ namespace AirDefense.UI
             for (int j = i; j < _markers.Count; j++) _markers[j].root.gameObject.SetActive(false);
 
             UpdateLead(leadTarget, scale);
+        }
+
+        // Edge-arrow keep-out (reference units, 1920x1080 canvas): clear of the pause button (top-right),
+        // weapon tiles / ammo / FIRE (bottom) and the radar + health bar block (top-left).
+        private const float InsetLeft = 50f, InsetRight = 170f, InsetTop = 150f, InsetBottom = 190f;
+        private const float RadarBlockRight = 330f, RadarBlockBottom = 370f;
+
+        /// <summary>Where along the inset screen edge an arrow toward <paramref name="dir"/> should sit.</summary>
+        private static Vector2 EdgePoint(Vector2 centre, Vector2 dir, Vector2 screen, float scale)
+        {
+            float minX = InsetLeft * scale, maxX = screen.x - InsetRight * scale;
+            float minY = InsetBottom * scale, maxY = screen.y - InsetTop * scale;
+            float kx = dir.x > 0 ? (maxX - centre.x) / dir.x : dir.x < 0 ? (minX - centre.x) / dir.x : float.MaxValue;
+            float ky = dir.y > 0 ? (maxY - centre.y) / dir.y : dir.y < 0 ? (minY - centre.y) / dir.y : float.MaxValue;
+            Vector2 p = centre + dir * Mathf.Min(kx, ky);
+
+            // Slide out of the radar block (top-left corner) along the edge we landed on.
+            float blockRight = RadarBlockRight * scale, blockBottom = screen.y - RadarBlockBottom * scale;
+            if (p.x < blockRight && p.y > blockBottom)
+            {
+                if (Mathf.Abs(p.y - maxY) < 1f) p.x = blockRight;  // on the top edge: move right
+                else p.y = blockBottom;                            // on the left edge: move down
+            }
+            return p;
         }
 
         private void UpdateLead(ThreatAgent target, float scale)

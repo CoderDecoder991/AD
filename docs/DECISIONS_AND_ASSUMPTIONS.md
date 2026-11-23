@@ -54,6 +54,8 @@ Single source of truth for project decisions. Every other document refers back h
 | R-15 | Art approach (#11) | Licensed asset-store packs for environment/props, commissioned or bought models for the three weapons, in-engine VFX, licensed SFX libraries. | Realistic quality without a large art team. | Fully commissioned; fully in-house. |
 | R-16 | Cinematic in MVP | Production storyboard plus an in-engine animatic in Milestone 2, built with Timeline from gameplay assets. Full-quality version in Milestone 8. | Avoids blocking the core prototype on expensive character animation. | Full cinematic in MVP. |
 | R-17 | Version control — **now Confirmed as C-18** | Git with Git LFS for binary assets. Unity project on the C: SSD, not the H: HDD. | Safety and editor speed. | Plastic SCM / Unity Version Control. |
+| R-19 | Failed missions | Pay interception credits only (no completion or bonuses). Dev stress-test runs pay nothing. | Effort is never wasted, but winning matters; the economy stays honest during testing. | Pay nothing on failure. |
+| R-20 | Quality auto-detect | High if ≥7 GB RAM and ≥8 cores; Medium if ≥3.5 GB and ≥6 cores; else Low. Refine with a benchmark in M8. | Simple first pass; the Pad 8 detects as High. | GPU-name lookup tables. |
 | R-18 | Support priorities | Simple per-weapon priority setting between waves (Most dangerous / Closest / Threat class). Assessed in playtests before committing. | Gives the player control over autonomy. | No setting; per-target designation. |
 
 ## 3. Open (needs user decision)

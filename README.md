@@ -4,7 +4,9 @@ A realistic 3D air-defence command game for Android. You start on a ZU-23-2, ear
 
 ## Status
 
-**Milestone 1 — ZU-23-2 greybox prototype, built and running on the Pad 8; awaiting your playtest.** One mission (3 waves, small drones + fixed-wing drones), touch aiming and firing, heat and reload, radar, target brackets and edge arrows, a lead ring (aim assist), installation health, and an after-action report. 60 fps with 20+ threats. 14 automated tests pass. All art is labelled placeholder greybox. (M0 is done, apart from a Profiler connection check.)
+**Milestone 2 — vertical slice, part A done** (real ZU-23-2 model, save system, credits economy, unlock progress, quality tiers). Part B (night base, audio, cinematic animatic, credits screen) is waiting on art/audio sourcing decisions. M1 still needs your playtest of aiming feel.
+
+**Milestone 1 — ZU-23-2 prototype, built and running on the Pad 8.** One mission (3 waves, small drones + fixed-wing drones), touch aiming and firing, heat and reload, radar, target brackets and edge arrows, a lead ring (aim assist), installation health, and an after-action report. 60 fps with 20+ threats. 14 automated tests pass. All art is labelled placeholder greybox. (M0 is done, apart from a Profiler connection check.)
 
 ## Working with the project
 - Open `C:\dev\AirDefense` in Unity Hub (Add → Add project from disk).

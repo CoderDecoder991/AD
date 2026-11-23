@@ -23,6 +23,15 @@ namespace AirDefense.UI
         public PlayerInputState input;
         public ThreatManager threats;
         public Camera cam;
+        public Progression.WeaponRoster roster;
+
+        private readonly System.Collections.Generic.List<(Data.WeaponDefinition def, Text state, Image bg)> _tiles =
+            new System.Collections.Generic.List<(Data.WeaponDefinition, Text, Image)>();
+        private Text _qualityText;
+        private Text _endRewards;
+        private Image _unlockFill;
+        private Text _unlockText;
+        private Text _briefCredits;
 
         private Canvas _canvas;
         private RectTransform _safe;
@@ -150,10 +159,10 @@ namespace AirDefense.UI
             var pauseBtn = UiFactory.Button("Pause", _safe, "II", 40, () => SetPaused(true));
             pauseBtn.GetComponent<RectTransform>().Anchor(new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-24f, -24f), new Vector2(100f, 100f));
 
-            // Weapon tiles (bottom-left). Only ZU-23-2 is available (C-05); others show unlock cost.
-            Tile("ZU-23-2", "MANUAL", new Vector2(24f, 24f), true);
-            Tile("C-RAM", "LOCKED\n4,000 cr", new Vector2(194f, 24f), false);
-            Tile("TUNGUSKA", "LOCKED\n10,000 cr", new Vector2(364f, 24f), false);
+            // Weapon tiles (bottom-left), from the roster. ZU-23-2 is manual (C-05); others show unlock progress.
+            for (int i = 0; i < roster.weapons.Count; i++)
+                Tile(roster.weapons[i], new Vector2(24f + i * 170f, 24f), selected: roster.weapons[i] == player.mount.definition);
+            RefreshTiles();
 
             // Ammo / heat (bottom-centre). Tap to reload early.
             var ammoBtn = UiFactory.Button("Ammo", _safe, "", 10, () => { input.ReloadRequested = true; _hintedReload = true; });
@@ -185,9 +194,10 @@ namespace AirDefense.UI
             outline.effectDistance = new Vector2(2f, -2f);
         }
 
-        private void Tile(string name, string state, Vector2 pos, bool selected)
+        private void Tile(Data.WeaponDefinition def, Vector2 pos, bool selected)
         {
-            var bg = UiFactory.Image("Tile_" + name, _safe, selected ? new Color(0.12f, 0.3f, 0.14f, 0.9f) : new Color(0.1f, 0.1f, 0.1f, 0.7f), UiFactory.Rounded);
+            string name = def.displayName.Replace("2K22 ", "").ToUpperInvariant();
+            var bg = UiFactory.Image("Tile_" + def.weaponId, _safe, selected ? new Color(0.12f, 0.3f, 0.14f, 0.9f) : new Color(0.1f, 0.1f, 0.1f, 0.7f), UiFactory.Rounded);
             bg.rectTransform.Anchor(Vector2.zero, Vector2.zero, pos, new Vector2(160f, 120f));
             if (selected)
             {
@@ -197,8 +207,26 @@ namespace AirDefense.UI
             }
             var title = UiFactory.Text("Name", bg.transform, name, 24, TextAnchor.UpperCenter, selected ? Color.white : new Color(1f, 1f, 1f, 0.5f));
             title.rectTransform.Stretch(new Vector2(0f, 0.5f), new Vector2(1f, 0.92f));
-            var st = UiFactory.Text("State", bg.transform, state, 18, TextAnchor.MiddleCenter, selected ? UiFactory.Accent : new Color(1f, 1f, 1f, 0.45f));
+            var st = UiFactory.Text("State", bg.transform, "", 18, TextAnchor.MiddleCenter, selected ? UiFactory.Accent : new Color(1f, 1f, 1f, 0.45f));
             st.rectTransform.Stretch(new Vector2(0f, 0.05f), new Vector2(1f, 0.5f));
+            _tiles.Add((def, st, bg));
+        }
+
+        /// <summary>Tile states from the saved profile (UI_UX_FLOW.md §3).</summary>
+        private void RefreshTiles()
+        {
+            PlayerProfile p = ProfileStore.Profile;
+            Data.WeaponDefinition next = roster.NextUnlock(p);
+            foreach (var (def, state, _) in _tiles)
+            {
+                if (def == player.mount.definition) state.text = "MANUAL";
+                else if (p.IsUnlocked(def.weaponId)) state.text = "UNLOCKED";
+                else if (def == next)
+                    state.text = p.credits >= def.unlockCost
+                        ? "READY TO\nUNLOCK (M3)"
+                        : $"LOCKED\n{p.credits:N0} / {def.unlockCost:N0} cr";
+                else state.text = $"LOCKED\n{def.unlockCost:N0} cr";
+            }
         }
 
         private static Image Bar(Transform parent, Vector2 min, Vector2 max, Color color)
@@ -230,6 +258,11 @@ namespace AirDefense.UI
             var b = UiFactory.Text("Body", card, director.mission.briefing, 30, TextAnchor.UpperLeft);
             b.horizontalOverflow = HorizontalWrapMode.Wrap;
             b.rectTransform.Stretch(new Vector2(0.07f, 0.3f), new Vector2(0.93f, 0.78f));
+            _briefCredits = UiFactory.Text("Credits", card, "", 26, TextAnchor.MiddleCenter, UiFactory.Warn);
+            _briefCredits.rectTransform.Stretch(new Vector2(0.05f, 0.24f), new Vector2(0.95f, 0.30f));
+            var pr = ProfileStore.Profile;
+            var nextW = roster.NextUnlock(pr);
+            _briefCredits.text = $"Credits: {pr.credits:N0}" + (nextW != null ? $"   -   next unlock: {nextW.displayName} at {nextW.unlockCost:N0}" : "");
             var start = UiFactory.Button("Start", card, "START", 44, StartMission, new Color(0.15f, 0.45f, 0.2f, 1f));
             start.GetComponent<RectTransform>().Anchor(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 50f), new Vector2(380f, 120f));
 
@@ -248,11 +281,18 @@ namespace AirDefense.UI
             var t = UiFactory.Text("Title", card, "PAUSED", 52, TextAnchor.UpperCenter, UiFactory.Accent);
             t.rectTransform.Stretch(new Vector2(0f, 0.86f), new Vector2(1f, 0.96f));
 
-            _sensText = Row(card, 0.70f, "Aim sensitivity", () => ChangeSensitivity(-0.1f), () => ChangeSensitivity(0.1f));
-            _invertText = Row(card, 0.55f, "Invert vertical", () => { GameSettings.InvertY = !GameSettings.InvertY; RefreshSettings(); }, null);
-            _assistText = Row(card, 0.40f, "Aim assist (lead ring)", () =>
+            _sensText = Row(card, 0.76f, "Aim sensitivity", () => ChangeSensitivity(-0.1f), () => ChangeSensitivity(0.1f));
+            _invertText = Row(card, 0.64f, "Invert vertical", () => { GameSettings.InvertY = !GameSettings.InvertY; RefreshSettings(); }, null);
+            _assistText = Row(card, 0.52f, "Aim assist (lead ring)", () =>
             {
                 GameSettings.Assist = GameSettings.Assist == AimAssist.Off ? AimAssist.Light : AimAssist.Off;
+                RefreshSettings();
+            }, null);
+            _qualityText = Row(card, 0.40f, "Graphics quality", () =>
+            {
+                // AUTO -> LOW -> MEDIUM -> HIGH -> AUTO
+                int q = GameSettings.QualityOverride;
+                GameSettings.QualityOverride = q >= 2 ? -1 : q + 1;
                 RefreshSettings();
             }, null);
 
@@ -264,7 +304,8 @@ namespace AirDefense.UI
             if (Debug.isDebugBuild)
             {
                 var stress = UiFactory.Button("Stress", card, "DEV: +20 THREATS", 24, () => { SetPaused(false); director.DebugSpawnStress(20); });
-                stress.GetComponent<RectTransform>().Anchor(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 180f), new Vector2(340f, 70f));
+                stress.GetComponent<RectTransform>().Anchor(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 175f), new Vector2(420f, 64f));
+                stress.GetComponentInChildren<Text>().text = "DEV: +20 THREATS (no rewards)";
             }
 
             RefreshSettings();
@@ -300,9 +341,22 @@ namespace AirDefense.UI
             var card = _end.transform.Find("Card");
             _endTitle = UiFactory.Text("Title", card, "", 56, TextAnchor.UpperCenter);
             _endTitle.rectTransform.Stretch(new Vector2(0f, 0.84f), new Vector2(1f, 0.96f));
-            _endBody = UiFactory.Text("Body", card, "", 30, TextAnchor.UpperLeft);
+            // Left: performance. Right: credits earned. Below: next-unlock progress (ECONOMY §2, GDD §7).
+            _endBody = UiFactory.Text("Body", card, "", 26, TextAnchor.UpperLeft);
             _endBody.horizontalOverflow = HorizontalWrapMode.Wrap;
-            _endBody.rectTransform.Stretch(new Vector2(0.08f, 0.25f), new Vector2(0.92f, 0.8f));
+            _endBody.rectTransform.Stretch(new Vector2(0.06f, 0.30f), new Vector2(0.52f, 0.82f));
+            _endRewards = UiFactory.Text("Rewards", card, "", 26, TextAnchor.UpperLeft, UiFactory.Warn);
+            _endRewards.horizontalOverflow = HorizontalWrapMode.Wrap;
+            _endRewards.rectTransform.Stretch(new Vector2(0.56f, 0.30f), new Vector2(0.95f, 0.82f));
+
+            var barBg = UiFactory.Image("UnlockBar", card, new Color(1f, 1f, 1f, 0.12f), UiFactory.White);
+            barBg.rectTransform.Stretch(new Vector2(0.06f, 0.215f), new Vector2(0.94f, 0.245f));
+            _unlockFill = UiFactory.Image("Fill", barBg.transform, UiFactory.Warn, UiFactory.White);
+            _unlockFill.rectTransform.Stretch(Vector2.zero, Vector2.one);
+            _unlockFill.type = Image.Type.Filled;
+            _unlockFill.fillMethod = Image.FillMethod.Horizontal;
+            _unlockText = UiFactory.Text("UnlockText", card, "", 22, TextAnchor.MiddleLeft);
+            _unlockText.rectTransform.Stretch(new Vector2(0.06f, 0.25f), new Vector2(0.94f, 0.30f));
             var retry = UiFactory.Button("Retry", card, "PLAY AGAIN", 40, Restart, new Color(0.15f, 0.45f, 0.2f, 1f));
             retry.GetComponent<RectTransform>().Anchor(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 50f), new Vector2(400f, 110f));
             _end.SetActive(false);
@@ -417,9 +471,35 @@ namespace AirDefense.UI
                 $"Grade: {grade}\n" +
                 $"Time: {r.duration:0} s\n" +
                 $"Installation: {r.healthRemaining01 * 100f:0}%\n" +
-                $"Threats destroyed: {r.threatsDestroyed} / {r.threatsTotal}   (reached base: {r.threatsLeaked})\n" +
-                $"Accuracy: {r.Accuracy * 100f:0.0}%  ({r.roundsHit} hits / {r.roundsFired} rounds)\n\n" +
+                $"Destroyed: {r.threatsDestroyed} / {r.threatsTotal}  (reached base: {r.threatsLeaked})\n" +
+                $"Accuracy: {r.Accuracy * 100f:0.0}%  ({r.roundsHit}/{r.roundsFired})\n\n" +
                 tip;
+
+            // Credits earned (already added to the profile and saved by MissionDirector).
+            var sb = new System.Text.StringBuilder("CREDITS EARNED\n");
+            var rw = director.Rewards;
+            if (rw == null || rw.lines.Count == 0)
+                sb.Append(director.StressTestUsed ? "None (dev stress test used)\n" : "None this time\n");
+            else
+                foreach (var line in rw.lines) sb.Append($"{line.label}:  +{line.credits:N0}\n");
+            sb.Append($"\nTOTAL  +{rw?.Total ?? 0:N0}\nBalance: {ProfileStore.Profile.credits:N0} cr");
+            _endRewards.text = sb.ToString();
+
+            var p = ProfileStore.Profile;
+            var next = roster.NextUnlock(p);
+            if (next != null)
+            {
+                _unlockFill.fillAmount = Mathf.Clamp01((float)p.credits / next.unlockCost);
+                _unlockText.text = p.credits >= next.unlockCost
+                    ? $"{next.displayName}: enough credits - unlocking arrives in M3"
+                    : $"Next unlock: {next.displayName}  {p.credits:N0} / {next.unlockCost:N0} cr";
+            }
+            else
+            {
+                _unlockFill.fillAmount = 1f;
+                _unlockText.text = "All weapon systems unlocked";
+            }
+            RefreshTiles();
         }
 
         private void SetPaused(bool paused)
@@ -444,6 +524,7 @@ namespace AirDefense.UI
             _sensText.text = GameSettings.Sensitivity.ToString("0.0");
             _invertText.text = GameSettings.InvertY ? "ON" : "OFF";
             _assistText.text = GameSettings.Assist == AimAssist.Light ? "ON" : "OFF";
+            _qualityText.text = QualityTiers.Label(GameSettings.QualityOverride);
         }
 
         private static void Restart()

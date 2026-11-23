@@ -69,6 +69,16 @@ M0 Setup ─► M1 ZU greybox ─► M2 Vertical slice (MVP) ─► M3 C-RAM + s
 - After-action report with tips.
 - Cinematic storyboard and in-engine animatic (R-16), seamless into Mission 1, skippable.
 - **Accept:** everything in brief §12. A 20-minute soak test at ≥ 55 fps on the Pad 8. Save survives app kill and restart. Cinematic acceptance criteria in [CINEMATIC_OPENING.md](CINEMATIC_OPENING.md) met (animatic quality).
+- **Progress (2026-11-23), M2 part A: systems that need no new art:**
+  - ✅ ZU-23-2 real model integrated (CC-BY, reduced and rigged; see ASSET_REGISTER M-01).
+  - ✅ Save system: versioned JSON with a backup, an integrity hash and migration (`SaveService`). Settings moved from PlayerPrefs into the save.
+  - ✅ Credits economy (`EconomyConfig`, `RewardCalculator`): completion + interceptions + health/accuracy bonuses + first-completion bonus. A failed mission pays interceptions only. The dev stress test pays nothing.
+  - ✅ After-action credits breakdown and next-unlock progress bar; weapon tiles show live progress (`WeaponRoster`, sequential unlocks R-04).
+  - ✅ Quality tiers Low/Medium/High: auto-detected (Pad 8 → High) with an override in the pause menu.
+  - ✅ Edge arrows kept clear of the radar, pause button and bottom controls.
+  - ✅ Tests: 22 EditMode + 3 PlayMode passing. On device: briefing credits, tile progress and graphics setting verified; 60 fps steady.
+  - ⏳ Not yet verified on device: a full mission paying credits and the balance surviving an app restart (covered by unit tests only).
+  - ⏳ **Part B, blocked on art/audio decisions (O-01, O-02):** night base environment, damage visuals, audio, cinematic animatic, Credits screen, 20-min soak test with final art.
 
 ### M3 — C-RAM, switching, autonomy
 - C-RAM battery model and behaviour, the unlock flow.

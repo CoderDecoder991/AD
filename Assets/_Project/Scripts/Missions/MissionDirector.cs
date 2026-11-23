@@ -18,6 +18,7 @@ namespace AirDefense.Missions
     public sealed class MissionDirector : MonoBehaviour
     {
         public MissionDefinition mission;
+        public Progression.EconomyConfig economy;
         public ThreatManager threats;
         public ProjectileSystem projectiles;
         public ManualWeaponController player;
@@ -31,6 +32,8 @@ namespace AirDefense.Missions
         public float Elapsed { get; private set; }
         public int TotalThreats { get; private set; }
         public MissionResult Result { get; private set; }
+        public Progression.RewardBreakdown Rewards { get; private set; }
+        public int InterceptCredits { get; private set; }
 
         private bool _spawningDone;
 
@@ -105,6 +108,7 @@ namespace AirDefense.Missions
         private void OnDestroyed(ThreatAgent t)
         {
             Destroyed++;
+            if (Phase == MissionPhase.Running) InterceptCredits += t.Definition.interceptCredits;
             if (Debug.isDebugBuild)
                 Debug.Log($"[Mission] {t.Definition.displayName} #{t.Id} destroyed at {Vector3.Distance(t.transform.position, player.mount.pitchPivot.position):0} m ({Destroyed}/{TotalThreats})");
         }
@@ -134,15 +138,43 @@ namespace AirDefense.Missions
                 roundsHit = projectiles.RoundsHit,
                 threatsDestroyed = Destroyed,
                 threatsLeaked = Leaked,
-                threatsTotal = TotalThreats
+                threatsTotal = TotalThreats,
+                interceptCredits = InterceptCredits,
+                missionId = mission.missionId
             };
+            ApplyRewards(Result);
             GameEvents.RaiseMissionEnded(Result);
         }
+
+        /// <summary>Pays credits, records progress and stats, and saves immediately.</summary>
+        private void ApplyRewards(MissionResult r)
+        {
+            PlayerProfile p = ProfileStore.Profile;
+            bool first = r.success && !p.HasCompleted(r.missionId);
+            Rewards = StressTestUsed
+                ? new Progression.RewardBreakdown() // dev stress run: nothing paid
+                : Progression.RewardCalculator.Calculate(r, economy, first);
+            if (StressTestUsed) first = false;
+
+            p.credits += Rewards.Total;
+            if (first) p.completedMissions.Add(r.missionId);
+            p.stats.missionsPlayed++;
+            if (r.success) p.stats.missionsWon++;
+            p.stats.threatsDestroyed += r.threatsDestroyed;
+            p.stats.roundsFired += r.roundsFired;
+            p.stats.roundsHit += r.roundsHit;
+            p.stats.creditsEarnedTotal += Rewards.Total;
+            ProfileStore.Save();
+        }
+
+        /// <summary>True once the dev stress test was used; that mission pays no rewards (keeps the economy honest).</summary>
+        public bool StressTestUsed { get; private set; }
 
         /// <summary>Development-only stress test: spawns <paramref name="count"/> threats at once (M1 acceptance: 20).</summary>
         public void DebugSpawnStress(int count)
         {
             if (Phase != MissionPhase.Running || mission.waves.Count == 0) return;
+            StressTestUsed = true;
             var source = mission.waves[mission.waves.Count - 1].groups;
             for (int i = 0; i < count; i++)
             {

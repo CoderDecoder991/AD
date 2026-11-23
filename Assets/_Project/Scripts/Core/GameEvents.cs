@@ -46,6 +46,8 @@ namespace AirDefense.Core
         public int threatsDestroyed;
         public int threatsLeaked;
         public int threatsTotal;
+        public int interceptCredits;
+        public string missionId;
 
         public float Accuracy => roundsFired > 0 ? (float)roundsHit / roundsFired : 0f;
     }

@@ -44,9 +44,15 @@ namespace AirDefense.EditorTools
             var small = CreateSmallDrone();
             var wing = CreateFixedWing();
             var mission = CreateMission(small, wing);
+            var economy = LoadOrCreate<Progression.EconomyConfig>($"{DataDir}/EconomyConfig.asset", out _);
+            var cram = CreateLockedStub("Weapon_CRAM", "cram", "C-RAM", 4000);
+            var tunguska = CreateLockedStub("Weapon_Tunguska", "tunguska", "2K22 Tunguska", 10000);
+            var roster = LoadOrCreate<Progression.WeaponRoster>($"{DataDir}/WeaponRoster.asset", out _);
+            roster.weapons = new List<WeaponDefinition> { zu, cram, tunguska }; // tile order + unlock sequence (R-04)
+            EditorUtility.SetDirty(roster);
             AssetDatabase.SaveAssets();
 
-            BuildScene(mats, visuals, zu, mission);
+            BuildScene(mats, visuals, zu, mission, economy, roster);
             Debug.Log("[M1SceneBuilder] M1 greybox scene built: " + ScenePath);
         }
 
@@ -229,6 +235,21 @@ namespace AirDefense.EditorTools
             return m;
         }
 
+        /// <summary>
+        /// Locked weapon used for tiles and unlock progress only. Its gameplay values are
+        /// filled in when the weapon is built (C-RAM in M3, Tunguska in M4).
+        /// </summary>
+        private static WeaponDefinition CreateLockedStub(string file, string id, string name, int cost)
+        {
+            var w = LoadOrCreate<WeaponDefinition>($"{DataDir}/Weapons/{file}.asset", out bool created);
+            if (!created) return w;
+            w.weaponId = id;
+            w.displayName = name;
+            w.unlockCost = cost;
+            EditorUtility.SetDirty(w);
+            return w;
+        }
+
         private static T LoadOrCreate<T>(string path, out bool created) where T : ScriptableObject
         {
             var a = AssetDatabase.LoadAssetAtPath<T>(path);
@@ -243,7 +264,8 @@ namespace AirDefense.EditorTools
 
         // ---------------------------------------------------------------- scene
 
-        private static void BuildScene(Dictionary<string, Material> m, PrototypeVisuals visuals, WeaponDefinition zu, MissionDefinition mission)
+        private static void BuildScene(Dictionary<string, Material> m, PrototypeVisuals visuals, WeaponDefinition zu, MissionDefinition mission,
+                                       Progression.EconomyConfig economy, Progression.WeaponRoster roster)
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
@@ -355,6 +377,7 @@ namespace AirDefense.EditorTools
             var director = new GameObject("MissionDirector").AddComponent<MissionDirector>();
             director.transform.SetParent(systems, false);
             director.mission = mission;
+            director.economy = economy;
             director.threats = threatMgr;
             director.projectiles = proj;
             director.player = ctrl;
@@ -368,6 +391,7 @@ namespace AirDefense.EditorTools
             hud.input = input;
             hud.threats = threatMgr;
             hud.cam = cam;
+            hud.roster = roster;
 
             EditorSceneManager.SaveScene(scene, ScenePath);
 
