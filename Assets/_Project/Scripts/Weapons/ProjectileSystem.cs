@@ -35,9 +35,8 @@ namespace AirDefense.Weapons
         public float tracerHiddenDistance = 3f;
 
         [Header("Self-destruct burst (optional)")]
-        public Material burstFireMaterial;   // additive fireball sheet
-        public Material burstSmokeMaterial;  // alpha soft dot
-        public Material burstSparkMaterial;  // additive soft dot (burning incendiary fragments)
+        public Material burstFireMaterial;   // additive glow, soft round texture (no fog)
+        public Material burstSmokeMaterial;  // alpha soft dot, no fog (dark puff readable against night sky)
 
         private struct Round
         {
@@ -61,7 +60,6 @@ namespace AirDefense.Weapons
         private static Mesh _ribbon;
         private ParticleSystem _burstFire;
         private ParticleSystem _burstSmoke;
-        private ParticleSystem _burstSparks;
         private readonly System.Random _rng = new System.Random(91);
 
         public int RoundsHit { get; private set; }
@@ -74,7 +72,6 @@ namespace AirDefense.Weapons
             _ribbon ??= BuildRibbon();
             if (burstFireMaterial != null) _burstFire = MakeBurstSystem("SelfDestructFlash", burstFireMaterial, true);
             if (burstSmokeMaterial != null) _burstSmoke = MakeBurstSystem("SelfDestructSmoke", burstSmokeMaterial, false);
-            if (burstSparkMaterial != null) _burstSparks = MakeSparkSystem(burstSparkMaterial);
         }
 
         /// <summary>Simple round (no drag, fixed lifetime). Kept for tests and older callers.</summary>
@@ -120,7 +117,7 @@ namespace AirDefense.Weapons
                 if (!done && r.age >= r.life)
                 {
                     done = true;
-                    if (r.selfDestruct) SelfDestructBurst(r.pos, Vector3.Distance(camPos, r.pos) * pxAngle);
+                    if (r.selfDestruct) SelfDestructBurst(r.pos, r.vel, Vector3.Distance(camPos, r.pos) * pxAngle);
                 }
 
                 if (!done)
@@ -186,53 +183,57 @@ namespace AirDefense.Weapons
             }
         }
 
-        /// <param name="metresPerPixel">World size of one screen pixel at the burst's distance.</param>
-        private void SelfDestructBurst(Vector3 pos, float metresPerPixel)
+        /// <summary>
+        /// A real shell airburst (research: flight-sim/veteran accounts, see WEAPON_SYSTEMS.md section 6):
+        /// one sharp round flash lasting about a tenth of a second (lighting the haze around it), then a
+        /// dark grey-black smoke puff that hangs for several seconds and slowly spreads, sometimes in a
+        /// "dumb-bell" of two lobes along the shell path. No falling sparks: that reads as a firework.
+        /// </summary>
+        /// <param name="metresPerPixel">World size of one screen pixel at the burst distance.</param>
+        private void SelfDestructBurst(Vector3 pos, Vector3 shellVelocity, float metresPerPixel)
         {
             GameEvents.RaiseRoundSelfDestructed(pos);
-            if (_burstSparks != null)
-            {
-                // Burning incendiary fragments: spray outward, arc down under gravity, cool and fade.
-                int n = 8 + _rng.Next(6);
-                float sparkSize = Mathf.Max(0.35f, metresPerPixel * 3.5f);
-                float speed = Mathf.Max(25f, metresPerPixel * 60f); // stays visible as a spray at range
-                for (int i = 0; i < n; i++)
-                {
-                    Vector3 dir = new Vector3((float)_rng.NextDouble() - 0.5f, (float)_rng.NextDouble() - 0.3f, (float)_rng.NextDouble() - 0.5f).normalized;
-                    _burstSparks.Emit(new ParticleSystem.EmitParams
-                    {
-                        position = pos, applyShapeToPosition = false,
-                        velocity = dir * speed * (0.5f + (float)_rng.NextDouble()),
-                        startSize = sparkSize * (0.7f + (float)_rng.NextDouble() * 0.6f),
-                        startLifetime = 0.45f + (float)_rng.NextDouble() * 0.5f,
-                        startColor = new Color(1f, 0.8f + (float)_rng.NextDouble() * 0.2f, 0.45f, 1f),
-                    }, 1);
-                }
-            }
+            float R() => (float)_rng.NextDouble();
+
             if (_burstFire != null)
             {
-                // A bright flash in a dark sky reads as a spark even when tiny: keep >= ~12 px on screen.
-                float size = Mathf.Max(2.2f + (float)_rng.NextDouble() * 1.5f, metresPerPixel * (16f + (float)_rng.NextDouble() * 8f));
+                // Core: compact white-hot flash, kept readable at range (>= ~10 px).
+                float core = Mathf.Max(2.5f + R() * 1.5f, metresPerPixel * (10f + R() * 4f));
                 _burstFire.Emit(new ParticleSystem.EmitParams
                 {
                     position = pos, applyShapeToPosition = false,
-                    startSize = size,
-                    startLifetime = 0.1f + (float)_rng.NextDouble() * 0.08f,
-                    startColor = new Color(1f, 0.75f, 0.45f, 1f),
-                    rotation = (float)_rng.NextDouble() * 360f,
+                    startSize = core,
+                    startLifetime = 0.08f + R() * 0.05f,
+                    startColor = new Color(1f, 0.95f, 0.85f, 1f),
+                }, 1);
+                // Halo: the flash lighting the surrounding haze for the same instant (dim, wide).
+                _burstFire.Emit(new ParticleSystem.EmitParams
+                {
+                    position = pos, applyShapeToPosition = false,
+                    startSize = core * (3.2f + R()),
+                    startLifetime = 0.1f + R() * 0.04f,
+                    startColor = new Color(1f, 0.7f, 0.4f, 0.22f),
                 }, 1);
             }
             if (_burstSmoke != null)
             {
-                _burstSmoke.Emit(new ParticleSystem.EmitParams
+                Vector3 along = shellVelocity.sqrMagnitude > 1f ? shellVelocity.normalized : Vector3.forward;
+                float puff = Mathf.Max(3.5f + R() * 1.5f, metresPerPixel * (9f + R() * 4f));
+                bool dumbbell = R() < 0.45f;
+                int lobes = dumbbell ? 2 : 1;
+                for (int k = 0; k < lobes; k++)
                 {
-                    position = pos, applyShapeToPosition = false,
-                    startSize = Mathf.Max(3f + (float)_rng.NextDouble() * 2f, metresPerPixel * 14f),
-                    startLifetime = 2.5f + (float)_rng.NextDouble() * 1.5f,
-                    startColor = new Color(0.45f, 0.45f, 0.45f, 0.45f),
-                    rotation = (float)_rng.NextDouble() * 360f,
-                    velocity = Vector3.up * 0.5f,
-                }, 1);
+                    float offset = dumbbell ? (k == 0 ? -1f : 1f) * puff * 0.28f : 0f;
+                    _burstSmoke.Emit(new ParticleSystem.EmitParams
+                    {
+                        position = pos + along * offset, applyShapeToPosition = false,
+                        startSize = puff * (dumbbell ? 0.8f : 1f),
+                        startLifetime = 5f + R() * 2f,
+                        startColor = new Color(1f, 1f, 1f, 0.8f),
+                        rotation = R() * 360f,
+                        velocity = along * 2f + Vector3.up * 0.3f, // carries on briefly with the shell momentum
+                    }, 1);
+                }
             }
         }
 
@@ -245,60 +246,36 @@ namespace AirDefense.Weapons
             var main = ps.main;
             main.simulationSpace = ParticleSystemSimulationSpace.World;
             main.playOnAwake = false;
-            main.maxParticles = fire ? 80 : 160;
+            main.maxParticles = fire ? 120 : 400;
             var em = ps.emission; em.enabled = false;
             var shape = ps.shape; shape.enabled = false;
             var col = ps.colorOverLifetime; col.enabled = true;
+            var size = ps.sizeOverLifetime; size.enabled = true;
             var g = new Gradient();
             if (fire)
             {
-                var sheet = ps.textureSheetAnimation;
-                sheet.enabled = true; sheet.numTilesX = 2; sheet.numTilesY = 2;
-                sheet.frameOverTime = new ParticleSystem.MinMaxCurve(0f);
-                sheet.startFrame = new ParticleSystem.MinMaxCurve(0f, 3.999f);
-                g.SetKeys(new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(new Color(1f, 0.5f, 0.2f), 1f) },
-                          new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(0f, 1f) });
+                // White-hot to orange, gone almost at once.
+                g.SetKeys(new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(new Color(1f, 0.55f, 0.25f), 1f) },
+                          new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(0.6f, 0.4f), new GradientAlphaKey(0f, 1f) });
+                size.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.EaseInOut(0f, 0.75f, 1f, 1.15f));
             }
             else
             {
-                g.SetKeys(new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
-                          new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(1f, 0.1f), new GradientAlphaKey(0f, 1f) });
-                var size = ps.sizeOverLifetime; size.enabled = true;
-                size.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 0.5f, 1f, 1.6f));
+                // Lit warm by the flash for an instant, then dark grey-black; hangs and slowly spreads.
+                g.SetKeys(new[]
+                          {
+                              new GradientColorKey(new Color(0.9f, 0.62f, 0.4f), 0f),
+                              new GradientColorKey(new Color(0.2f, 0.19f, 0.19f), 0.04f),
+                              new GradientColorKey(new Color(0.16f, 0.16f, 0.17f), 1f)
+                          },
+                          new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(0.85f, 0.02f), new GradientAlphaKey(0.55f, 0.4f), new GradientAlphaKey(0f, 1f) });
+                var curve = new AnimationCurve(new Keyframe(0f, 0.45f), new Keyframe(0.06f, 1f), new Keyframe(1f, 2.1f));
+                size.size = new ParticleSystem.MinMaxCurve(1f, curve);
+                var vel = ps.limitVelocityOverLifetime; vel.enabled = true; vel.limit = 0.5f; vel.dampen = 0.35f;
             }
             col.color = g;
             var r = go.GetComponent<ParticleSystemRenderer>();
             r.sharedMaterial = mat;
-            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            r.receiveShadows = false;
-            ps.Play();
-            return ps;
-        }
-
-        private ParticleSystem MakeSparkSystem(Material mat)
-        {
-            var go = new GameObject("SelfDestructSparks");
-            go.transform.SetParent(transform, false);
-            var ps = go.AddComponent<ParticleSystem>();
-            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-            var main = ps.main;
-            main.simulationSpace = ParticleSystemSimulationSpace.World;
-            main.playOnAwake = false;
-            main.maxParticles = 600;
-            main.gravityModifier = 2.5f; // exaggerated slightly so the droop reads at a distance
-            var em = ps.emission; em.enabled = false;
-            var shape = ps.shape; shape.enabled = false;
-            var col = ps.colorOverLifetime; col.enabled = true;
-            var g = new Gradient();
-            g.SetKeys(new[] { new GradientColorKey(new Color(1f, 0.95f, 0.7f), 0f), new GradientColorKey(new Color(1f, 0.35f, 0.1f), 1f) },
-                      new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(0.8f, 0.5f), new GradientAlphaKey(0f, 1f) });
-            col.color = g;
-            var drag = ps.limitVelocityOverLifetime; drag.enabled = true; drag.dampen = 0.08f; drag.limit = 1000f;
-            var r = go.GetComponent<ParticleSystemRenderer>();
-            r.sharedMaterial = mat;
-            r.renderMode = ParticleSystemRenderMode.Stretch; // motion-stretched, like burning fragments on camera
-            r.velocityScale = 0.025f;
-            r.lengthScale = 1.5f;
             r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             r.receiveShadows = false;
             ps.Play();

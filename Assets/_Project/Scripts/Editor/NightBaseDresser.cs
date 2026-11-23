@@ -434,6 +434,23 @@ namespace AirDefense.EditorTools
             return mat;
         }
 
+        /// <summary>Alpha-blended smoke that ignores fog (AirDefense/AlphaSmokeNoFog), for puffs high in the sky.</summary>
+        public static Material SkySmokeMaterial(string name, Texture tex)
+        {
+            var shader = Shader.Find("AirDefense/AlphaSmokeNoFog");
+            if (shader == null) return AlphaParticleMaterial(name, tex);
+            Directory.CreateDirectory(Gen);
+            string path = $"{Gen}{name}.mat";
+            var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (mat == null) { mat = new Material(shader); AssetDatabase.CreateAsset(mat, path); }
+            mat.shader = shader;
+            mat.SetTexture("_BaseMap", tex);
+            mat.SetColor("_BaseColor", Color.white);
+            mat.renderQueue = (int)RenderQueue.Transparent;
+            EditorUtility.SetDirty(mat);
+            return mat;
+        }
+
         public static Material AlphaParticleMaterial(string name, Texture tex)
         {
             var mat = AdditiveParticleMaterial(name, tex);

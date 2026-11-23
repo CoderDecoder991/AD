@@ -382,9 +382,9 @@ namespace AirDefense.EditorTools
             proj.threats = threatMgr;
             proj.viewCamera = cam;
             // Self-destruct bursts reuse the fireball sheet and soft smoke (realistic 23 mm HEI-T behaviour).
-            proj.burstFireMaterial = NightBaseDresser.GlowMaterial("SelfDestructFlash", GeneratedTexture("FireballSheet.png", () => MuzzleFlashFX.MakeFireballSheet()), new Color(3.6f, 2.7f, 1.8f, 1f));
-            proj.burstSmokeMaterial = NightBaseDresser.AlphaParticleMaterial("SelfDestructSmoke", NightBaseDresser.SoftDotAsset());
-            proj.burstSparkMaterial = NightBaseDresser.GlowMaterial("SelfDestructSparks", NightBaseDresser.SoftDotAsset(), new Color(3.5f, 2.6f, 1.4f, 1f));
+            // Airburst: round soft flash (white-hot, bloom) and a dark puff readable through the night fog.
+            proj.burstFireMaterial = NightBaseDresser.GlowMaterial("SelfDestructFlash", NightBaseDresser.SoftDotAsset(), new Color(6f, 5f, 3.8f, 1f));
+            proj.burstSmokeMaterial = NightBaseDresser.SkySmokeMaterial("SelfDestructSmoke", NightBaseDresser.SoftDotAsset());
 
             var inputGo = new GameObject("PlayerInput");
             inputGo.transform.SetParent(systems, false);
