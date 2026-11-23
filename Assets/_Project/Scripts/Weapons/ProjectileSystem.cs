@@ -28,9 +28,9 @@ namespace AirDefense.Weapons
         [Tooltip("Exposure time that sets the trail length (distance flown in this time).")]
         public float exposure = 1f / 60f; // typical camera shutter: at 970 m/s gives ~16 m dashes with gaps between rounds
         [Tooltip("Physical glow width, metres.")]
-        public float tracerWidth = 0.2f;   // glow around a ~2 cm burning element; the core in the texture is thinner
+        public float tracerWidth = 0.35f;
         [Tooltip("Minimum width on screen, in pixels, so far tracers remain visible points of light.")]
-        public float minPixelWidth = 6f;
+        public float minPixelWidth = 8f;
         [Tooltip("Tracers appear once the round is this far from the muzzle (they ignite almost immediately).")]
         public float tracerHiddenDistance = 3f;
 
@@ -49,7 +49,7 @@ namespace AirDefense.Weapons
             public float damage;
             public float travelled;
             public bool selfDestruct;
-            public bool tracer;         // this round carries a burning tracer
+            public int tracerIndex;     // -1 = no tracer
             public float flickerSeed;
             public float burstScale;    // self-destruct flash/puff size (1 = 23 mm)
             public bool burstSmoke;     // this round's self-destruct leaves a puff and a pop
@@ -59,12 +59,10 @@ namespace AirDefense.Weapons
         }
 
         private readonly List<Round> _rounds = new List<Round>(512);
-        // All visible tracers are drawn as one dynamic mesh (one draw call): a capsule per round.
-        private Mesh _tracerMesh;
-        private readonly List<Vector3> _tv = new List<Vector3>(4096);
-        private readonly List<Vector2> _tuv = new List<Vector2>(4096);
-        private readonly List<Color32> _tc = new List<Color32>(4096);
-        private readonly List<int> _ti = new List<int>(8192);
+        private readonly Stack<int> _freeTracers = new Stack<int>();
+        private readonly List<Transform> _tracerObjects = new List<Transform>();
+        private Transform _tracerRoot;
+        private static Mesh _ribbon;
         private ParticleSystem _burstFire;
         private ParticleSystem _burstSmoke;
         private readonly System.Random _rng = new System.Random(91);
@@ -74,15 +72,9 @@ namespace AirDefense.Weapons
 
         private void Awake()
         {
-            var tracers = new GameObject("Tracers");
-            tracers.transform.SetParent(transform, false);
-            _tracerMesh = new Mesh { name = "Tracers" };
-            _tracerMesh.MarkDynamic();
-            tracers.AddComponent<MeshFilter>().sharedMesh = _tracerMesh;
-            var mr = tracers.AddComponent<MeshRenderer>();
-            mr.sharedMaterial = visuals != null ? visuals.tracer : null;
-            mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            mr.receiveShadows = false;
+            _tracerRoot = new GameObject("Tracers").transform;
+            _tracerRoot.SetParent(transform, false);
+            _ribbon ??= BuildRibbon();
             if (burstFireMaterial != null) _burstFire = MakeBurstSystem("SelfDestructFlash", burstFireMaterial, true);
             if (burstSmokeMaterial != null) _burstSmoke = MakeBurstSystem("SelfDestructSmoke", burstSmokeMaterial, false);
         }
@@ -108,7 +100,7 @@ namespace AirDefense.Weapons
                 drag = dragK,
                 damage = damage,
                 selfDestruct = selfDestruct,
-                tracer = tracerBurn > 0f,
+                tracerIndex = tracerBurn > 0f ? AcquireTracer() : -1,
                 flickerSeed = (float)_rng.NextDouble() * 100f,
                 burstScale = burstScale,
                 burstSmoke = burstSmoke,
@@ -127,7 +119,6 @@ namespace AirDefense.Weapons
             // Metres per pixel at 1 m distance, for the minimum on-screen width.
             float pxAngle = cam != null ? 2f * Mathf.Tan(cam.fieldOfView * 0.5f * Mathf.Deg2Rad) / Mathf.Max(1, Screen.height) : 0f;
 
-            _tv.Clear(); _tuv.Clear(); _tc.Clear(); _ti.Clear();
             for (int i = _rounds.Count - 1; i >= 0; i--)
             {
                 Round r = _rounds[i];
@@ -160,69 +151,50 @@ namespace AirDefense.Weapons
                     }
                 }
 
-                if (r.tracer && !done && r.age < r.tracerBurn && r.travelled >= tracerHiddenDistance)
+                if (r.tracerIndex >= 0)
                 {
-                    float speed = r.vel.magnitude;
-                    Vector3 dir = r.vel / Mathf.Max(1e-3f, speed);
-                    float dist = Vector3.Distance(camPos, r.pos);
-                    // Streak = the burning point swept across the sensor during the exposure; never longer than the flight so far.
-                    float len = Mathf.Min(speed * exposure * r.tracerLength, r.travelled);
-                    // Keep at least minPixelWidth on screen: a far tracer stays a glowing point of light.
-                    float width = Mathf.Max(tracerWidth, dist * pxAngle * minPixelWidth) * r.tracerWidth;
-                    // Burning composition flickers slightly; dims in the last 0.3 s before burnout.
-                    float flicker = 0.85f + 0.3f * Mathf.PerlinNoise(r.flickerSeed, r.age * 25f);
-                    float fade = Mathf.Clamp01((r.tracerBurn - r.age) / 0.3f);
-                    AddTracerCapsule(r.pos, dir, len, width * Mathf.Lerp(0.55f, 1f, fade), flicker * Mathf.Lerp(0.3f, 1f, fade), camPos);
+                    Transform tr = _tracerObjects[r.tracerIndex];
+                    bool burning = r.age < r.tracerBurn;
+                    if (done || !burning)
+                    {
+                        tr.gameObject.SetActive(false);
+                        _freeTracers.Push(r.tracerIndex);
+                        r.tracerIndex = -1;
+                    }
+                    else if (r.travelled >= tracerHiddenDistance)
+                    {
+                        if (!tr.gameObject.activeSelf) tr.gameObject.SetActive(true);
+                        float speed = r.vel.magnitude;
+                        Vector3 dir = r.vel / Mathf.Max(1e-3f, speed);
+                        float dist = Vector3.Distance(camPos, r.pos);
+                        // Trail = distance flown during the exposure; never longer than the flight so far.
+                        float len = Mathf.Min(speed * exposure * r.tracerLength, r.travelled);
+                        // Keep at least minPixelWidth on screen; trail at least ~3x that so it reads as a streak.
+                        float minW = dist * pxAngle * minPixelWidth;
+                        float width = Mathf.Max(tracerWidth, minW) * r.tracerWidth;
+                        len = Mathf.Max(len, width * 5f);
+                        // Burning composition flickers slightly; fades in the last 0.3 s before burnout.
+                        float flicker = 0.85f + 0.3f * Mathf.PerlinNoise(r.flickerSeed, r.age * 25f);
+                        float fade = Mathf.Clamp01((r.tracerBurn - r.age) / 0.3f);
+                        width *= flicker * Mathf.Lerp(0.4f, 1f, fade);
+
+                        Vector3 tail = r.pos - dir * len;
+                        Vector3 toCam = camPos - tail;
+                        Vector3 side = Vector3.Cross(toCam, dir);
+                        if (side.sqrMagnitude < 1e-6f) side = Vector3.Cross(Vector3.up, dir);
+                        Vector3 normal = Vector3.Cross(dir, side.normalized);
+                        tr.SetPositionAndRotation(tail, Quaternion.LookRotation(dir, normal));
+                        tr.localScale = new Vector3(width, 1f, len);
+                    }
                 }
 
+                if (done && r.tracerIndex >= 0)
+                {
+                    _tracerObjects[r.tracerIndex].gameObject.SetActive(false);
+                    _freeTracers.Push(r.tracerIndex);
+                }
                 if (done) _rounds.RemoveAt(i);
                 else _rounds[i] = r;
-            }
-            _tracerMesh.Clear();
-            if (_tv.Count > 0)
-            {
-                _tracerMesh.SetVertices(_tv);
-                _tracerMesh.SetUVs(0, _tuv);
-                _tracerMesh.SetColors(_tc);
-                _tracerMesh.SetTriangles(_ti, 0, true);
-            }
-        }
-
-        /// <summary>
-        /// One tracer as it looks on camera (research: docs/WEAPON_SYSTEMS.md section 6): a constant point of
-        /// light swept across the sensor during the exposure, so an evenly bright bar with ROUND ends (the
-        /// glowing spot smeared, not a comet with a pointed tail). The burning core saturates the sensor to
-        /// yellow-white; the cooler edge shows the red-orange of the strontium flame. A short streak (round
-        /// coming toward the camera, or very far) becomes a round dot.
-        /// Built as tail cap + body + head cap so the caps stay round whatever the length: texture rows
-        /// 0-0.25 and 0.75-1 hold the half-discs, 0.25-0.75 the even body.
-        /// </summary>
-        private void AddTracerCapsule(Vector3 head, Vector3 dir, float len, float width, float brightness, Vector3 camPos)
-        {
-            float hw = width * 0.5f;
-            Vector3 tail = head - dir * len;
-            Vector3 mid = (head + tail) * 0.5f;
-            Vector3 side = Vector3.Cross(camPos - mid, dir);
-            if (side.sqrMagnitude < 1e-8f) side = Vector3.Cross(Vector3.up, dir);
-            side = side.normalized * hw;
-            int b = _tv.Count;
-            Vector3 p0 = tail - dir * hw, p1 = tail, p2 = head, p3 = head + dir * hw;
-            _tv.Add(p0 - side); _tv.Add(p0 + side);
-            _tv.Add(p1 - side); _tv.Add(p1 + side);
-            _tv.Add(p2 - side); _tv.Add(p2 + side);
-            _tv.Add(p3 - side); _tv.Add(p3 + side);
-            _tuv.Add(new Vector2(0f, 0f)); _tuv.Add(new Vector2(1f, 0f));
-            _tuv.Add(new Vector2(0f, 0.25f)); _tuv.Add(new Vector2(1f, 0.25f));
-            _tuv.Add(new Vector2(0f, 0.75f)); _tuv.Add(new Vector2(1f, 0.75f));
-            _tuv.Add(new Vector2(0f, 1f)); _tuv.Add(new Vector2(1f, 1f));
-            byte k = (byte)Mathf.Clamp(brightness * 255f, 0f, 255f);
-            var c = new Color32(k, k, k, 255);
-            for (int n = 0; n < 8; n++) _tc.Add(c);
-            for (int q = 0; q < 3; q++)
-            {
-                int v = b + q * 2;
-                _ti.Add(v); _ti.Add(v + 2); _ti.Add(v + 1);
-                _ti.Add(v + 1); _ti.Add(v + 2); _ti.Add(v + 3);
             }
         }
 
@@ -331,6 +303,34 @@ namespace AirDefense.Weapons
             r.receiveShadows = false;
             ps.Play();
             return ps;
+        }
+
+        /// <summary>Unit ribbon along +Z (0..1), width along X, facing +Y; white vertex colours.</summary>
+        private static Mesh BuildRibbon()
+        {
+            var m = new Mesh { name = "TracerRibbon" };
+            m.vertices = new[] { new Vector3(-0.5f, 0, 0), new Vector3(0.5f, 0, 0), new Vector3(0.5f, 0, 1), new Vector3(-0.5f, 0, 1) };
+            m.uv = new[] { new Vector2(0, 0), new Vector2(1, 0), new Vector2(1, 1), new Vector2(0, 1) };
+            m.colors = new[] { Color.white, Color.white, Color.white, Color.white };
+            m.triangles = new[] { 0, 2, 1, 0, 3, 2 };
+            m.RecalculateNormals();
+            m.bounds = new Bounds(new Vector3(0, 0, 0.5f), new Vector3(1, 1, 1));
+            return m;
+        }
+
+        private int AcquireTracer()
+        {
+            if (_freeTracers.Count > 0) return _freeTracers.Pop(); // stays hidden until it clears the muzzle
+            var go = new GameObject("Tracer");
+            go.transform.SetParent(_tracerRoot, false);
+            go.AddComponent<MeshFilter>().sharedMesh = _ribbon;
+            var mr = go.AddComponent<MeshRenderer>();
+            mr.sharedMaterial = visuals.tracer;
+            mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            mr.receiveShadows = false;
+            go.SetActive(false);
+            _tracerObjects.Add(go.transform);
+            return _tracerObjects.Count - 1;
         }
     }
 }

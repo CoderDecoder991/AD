@@ -254,28 +254,21 @@ namespace AirDefense.Weapons
         /// Tracer streak: bright glowing head at the front (v=1), fading tail behind (v=0),
         /// soft glowing edges across (u). Rendered stretched along the round's velocity.
         /// </summary>
-        /// <summary>
-        /// Tracer as a camera records it: rows 0-0.25 and 0.75-1 are round end caps, 0.25-0.75 the evenly lit
-        /// body (stretched along the streak). Across: a saturated yellow-white core with a fairly sharp edge,
-        /// then a red-orange halo (strontium flame and lens glow) fading out.
-        /// </summary>
-        public static Texture2D MakeTracerTexture(int w = 64, int h = 128)
+        public static Texture2D MakeTracerTexture(int w = 32, int h = 128)
         {
-            var tex = new Texture2D(w, h, TextureFormat.RGBA32, true) { wrapMode = TextureWrapMode.Clamp, name = "TracerCapsule" };
+            var tex = new Texture2D(w, h, TextureFormat.RGBA32, true) { wrapMode = TextureWrapMode.Clamp, name = "TracerStreak" };
             var px = new Color[w * h];
-            var hot = new Color(1f, 0.95f, 0.82f);
-            var red = new Color(1f, 0.32f, 0.12f);
             for (int y = 0; y < h; y++)
             for (int x = 0; x < w; x++)
             {
                 float v = (y + 0.5f) / h;
                 float u = Mathf.Abs((x + 0.5f) / w * 2f - 1f);
-                float dy = v < 0.25f ? (0.25f - v) / 0.25f : v > 0.75f ? (v - 0.75f) / 0.25f : 0f;
-                float d = Mathf.Sqrt(u * u + dy * dy);                    // 0 at the centre line, 1 at the rim
-                float core = 1f - Mathf.SmoothStep(0.1f, 0.28f, d);         // clipped (saturated) centre, thin
-                float halo = Mathf.Exp(-d * d * 5f) * (1f - Mathf.SmoothStep(0.8f, 1f, d));
-                float a = Mathf.Clamp01(core + halo * 0.4f);
-                Color c = Color.Lerp(red, hot, core);
+                float across = Mathf.Exp(-u * u * 9f);             // soft glow
+                float core = Mathf.Exp(-u * u * 60f);              // thin bright line
+                float along = Mathf.Pow(v, 2.2f);                  // tail fades out
+                float head = Mathf.Exp(-(1f - v) * (1f - v) * 400f); // bright head
+                float a = Mathf.Clamp01((across * 0.55f + core) * along + head * across);
+                Color c = Color.Lerp(new Color(1f, 0.35f, 0.15f), new Color(1f, 0.85f, 0.6f), core * 0.8f + head);
                 px[y * w + x] = new Color(c.r, c.g, c.b, a);
             }
             tex.SetPixels(px);
