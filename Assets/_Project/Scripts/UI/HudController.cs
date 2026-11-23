@@ -16,6 +16,7 @@ namespace AirDefense.UI
     /// and the after-action screen. Layout is in 1920x1080 reference units and
     /// follows the device safe area.
     /// </summary>
+    [DefaultExecutionOrder(200)] // after ManualWeaponController (100) moves the camera
     public sealed class HudController : MonoBehaviour
     {
         public MissionDirector director;
@@ -51,6 +52,7 @@ namespace AirDefense.UI
         private float _bannerUntil;
         private Text _prompt;
         private Image _fireImage;
+        private RectTransform _crosshair;
 
         private GameObject _briefing;
         private GameObject _pause;
@@ -133,8 +135,10 @@ namespace AirDefense.UI
             ThreatMarkers.Build(_safe, _canvas, threats, cam, player.mount);
 
             // Crosshair
+            // Crosshair: drawn where the gun's bore actually points (third-person camera is tilted, see LateUpdate).
             var ch = UiFactory.Image("Crosshair", _safe, new Color(0.7f, 1f, 0.7f, 0.8f), UiFactory.Ring);
-            ch.rectTransform.Anchor(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(46f, 46f));
+            ch.rectTransform.Anchor(Vector2.zero, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(46f, 46f));
+            _crosshair = ch.rectTransform;
             var dot = UiFactory.Image("Dot", ch.transform, new Color(0.7f, 1f, 0.7f, 0.9f), UiFactory.Circle);
             dot.rectTransform.Anchor(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(6f, 6f));
 
@@ -431,6 +435,15 @@ namespace AirDefense.UI
             if (_banner.text.Length > 0 && Time.unscaledTime > _bannerUntil) _banner.text = "";
 
             UpdatePrompts();
+        }
+
+        private void LateUpdate()
+        {
+            // Runs after the camera has moved this frame (execution order), so the crosshair never lags.
+            if (_crosshair == null || cam == null) return;
+            Vector3 sp = cam.WorldToScreenPoint(player.AimPoint);
+            _crosshair.gameObject.SetActive(sp.z > 0f);
+            _crosshair.anchoredPosition = new Vector2(sp.x, sp.y) / _canvas.scaleFactor;
         }
 
         private void UpdatePrompts()

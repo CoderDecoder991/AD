@@ -3,138 +3,168 @@ using UnityEngine;
 namespace AirDefense.Weapons
 {
     /// <summary>
-    /// Muzzle flash for each barrel: a camera-facing star burst, a forward flame
-    /// tongue (two crossed quads along the bore), a short light flash that lights
-    /// up the gun and surroundings at night, and a smoke puff. Each shot varies size
-    /// and rotation so the flash never looks repeated. Mobile-friendly: a few quads
-    /// per barrel, one light, small particle counts.
+    /// Realistic muzzle flash per barrel (user feedback: the earlier star sprite looked "animated").
+    /// A real autocannon flash is an irregular, turbulent fireball that differs every shot and
+    /// lasts 2-3 frames: a white-hot core at the muzzle and a few orange flame lobes pushed
+    /// forward by the propellant gas, then grey smoke. Built from particles using four
+    /// noise-generated fireball images (random image, size and rotation per puff), plus a short
+    /// light flash that lights the gun and surroundings at night.
     /// </summary>
     public sealed class MuzzleFlashFX : MonoBehaviour
     {
         public GunMount mount;
         public Camera viewCamera;
-        public Material burstMaterial;   // additive, star-burst texture (HDR colour)
-        public Material tongueMaterial;  // additive, flame-tongue texture (HDR colour)
+        [Tooltip("Additive material using the 2x2 fireball sheet (MakeFireballSheet).")]
+        public Material fireMaterial;
         public Material smokeMaterial;   // alpha-blended soft dot
 
         [Header("Look")]
-        public float burstSize = 0.95f;
-        public float tongueLength = 1.5f;
-        public float tongueWidth = 0.55f;
-        public float flashTime = 0.045f;      // ~3 frames at 60 fps
-        public float lightIntensity = 9f;
-        public float lightRange = 14f;
+        public float coreSize = 0.75f;
+        public float lobeSize = 0.6f;
+        public float lobeReach = 1.1f;       // how far forward the flame lobes reach, metres
+        public float flashLife = 0.04f;      // seconds (2-3 frames at 60 fps)
+        public float lightIntensity = 10f;
+        public float lightRange = 16f;
 
-        private sealed class Barrel
-        {
-            public Transform burst;
-            public Transform tongue;
-            public float t = 999f;
-            public float scale = 1f;
-            public ParticleSystem smoke;
-        }
-
-        private Barrel[] _b;
+        private ParticleSystem[] _fire;
+        private ParticleSystem[] _smoke;
         private Light _light;
         private float _lightT = 999f;
-        private static Mesh _quad;
         private readonly System.Random _rng = new System.Random(77);
+
+        // Kept so the scene builder's older references still compile.
+        [HideInInspector] public Material burstMaterial;
+        [HideInInspector] public Material tongueMaterial;
 
         private void Start()
         {
-            _quad ??= BuildQuad();
             var muzzles = mount.muzzles;
-            _b = new Barrel[muzzles.Length];
+            _fire = new ParticleSystem[muzzles.Length];
+            _smoke = new ParticleSystem[muzzles.Length];
             for (int i = 0; i < muzzles.Length; i++)
             {
-                var b = new Barrel();
-                b.burst = Part("FlashBurst", muzzles[i], burstMaterial).transform;
-                var tongueRoot = new GameObject("FlashTongue").transform;
-                tongueRoot.SetParent(muzzles[i], false);
-                // Two quads crossed along the bore (local +Z of the muzzle's parent frame).
-                for (int k = 0; k < 2; k++)
-                {
-                    var q = Part("Tongue" + k, tongueRoot, tongueMaterial).transform;
-                    // Quad +Y -> root +Z (the bore); second quad turned 90° about the bore. Starts at the muzzle.
-                    q.localRotation = Quaternion.Euler(0f, 0f, k * 90f) * Quaternion.Euler(90f, 0f, 0f);
-                    q.localPosition = new Vector3(0f, 0f, 0.5f);
-                }
-                b.tongue = tongueRoot;
-                b.burst.gameObject.SetActive(false);
-                b.tongue.gameObject.SetActive(false);
-                b.smoke = MakeSmoke(muzzles[i]);
-                _b[i] = b;
+                _fire[i] = MakeFire(muzzles[i]);
+                _smoke[i] = MakeSmoke(muzzles[i]);
             }
-
             _light = new GameObject("MuzzleLight").AddComponent<Light>();
             _light.transform.SetParent(mount.pitchPivot, false);
-            _light.transform.position = (muzzles[0].position + muzzles[muzzles.Length - 1].position) * 0.5f;
+            _light.transform.position = (muzzles[0].position + muzzles[muzzles.Length - 1].position) * 0.5f + mount.BoreDirection * 0.5f;
             _light.type = LightType.Point;
-            _light.color = new Color(1f, 0.72f, 0.38f);
+            _light.color = new Color(1f, 0.7f, 0.35f);
             _light.range = lightRange;
             _light.intensity = 0f;
             _light.shadows = LightShadows.None;
         }
 
+        private float R => (float)_rng.NextDouble();
+
         public void Flash(int barrel)
         {
-            if (_b == null) return;
-            var b = _b[barrel % _b.Length];
-            b.t = 0f;
-            b.scale = 0.75f + (float)_rng.NextDouble() * 0.5f;
-            float roll = (float)_rng.NextDouble() * 360f;
-            b.burst.gameObject.SetActive(true);
-            b.tongue.gameObject.SetActive(true);
-            b.burst.localScale = Vector3.one * burstSize * b.scale;
-            b.tongue.rotation = Quaternion.LookRotation(mount.BoreDirection) * Quaternion.Euler(0f, 0f, roll);
-            b.tongue.localScale = new Vector3(tongueWidth * b.scale, tongueWidth * b.scale, tongueLength * (0.7f + (float)_rng.NextDouble() * 0.6f));
-            b.burst.localRotation = Quaternion.identity;
-            _lightT = 0f;
+            if (_fire == null) return;
+            int i = barrel % _fire.Length;
+            Vector3 origin = mount.muzzles[i].position;
+            Vector3 fwd = mount.BoreDirection;
+            Vector3 side = Vector3.Cross(fwd, Vector3.up).normalized;
+            if (side.sqrMagnitude < 0.01f) side = Vector3.right;
+            Vector3 up = Vector3.Cross(side, fwd);
+            ParticleSystem ps = _fire[i];
 
+            // White-hot core right at the muzzle.
+            Emit(ps, origin + fwd * 0.08f, coreSize * (0.8f + R * 0.5f), flashLife * (0.8f + R * 0.4f), new Color(1f, 0.93f, 0.75f, 1f), fwd * 2f);
+
+            // 2-4 orange lobes, pushed forward and slightly off-axis, each a different shape.
+            int lobes = 2 + _rng.Next(3);
+            for (int k = 0; k < lobes; k++)
+            {
+                float along = lobeReach * (0.25f + R * 0.75f);
+                Vector3 off = side * (R - 0.5f) * 0.35f + up * (R - 0.5f) * 0.35f;
+                float size = lobeSize * (0.6f + R * 0.8f) * (1f - along / (lobeReach * 2.2f));
+                var col = Color.Lerp(new Color(1f, 0.62f, 0.25f, 0.95f), new Color(1f, 0.42f, 0.12f, 0.8f), along / lobeReach);
+                Emit(ps, origin + fwd * along + off, size, flashLife * (0.7f + R * 0.6f), col, fwd * (6f + R * 6f));
+            }
+
+            // Brief side flare from the flash hider (smaller, sometimes absent).
+            if (R < 0.6f)
+            {
+                float s = R < 0.5f ? 1f : -1f;
+                Emit(ps, origin + fwd * 0.12f + side * s * 0.18f, lobeSize * 0.45f, flashLife * 0.6f,
+                     new Color(1f, 0.55f, 0.2f, 0.7f), side * s * 4f);
+            }
+
+            _lightT = 0f;
+            _light.transform.position = origin + fwd * 0.6f;
+
+            // Smoke puff that lingers and drifts.
             var ep = new ParticleSystem.EmitParams
             {
-                velocity = mount.BoreDirection * (2f + (float)_rng.NextDouble() * 2f) + Vector3.up * 0.4f,
-                startSize = 0.6f + (float)_rng.NextDouble() * 0.5f,
-                startLifetime = 1.4f + (float)_rng.NextDouble() * 0.8f,
-                rotation = (float)_rng.NextDouble() * 360f,
+                position = origin + fwd * 0.3f,
+                applyShapeToPosition = false,
+                velocity = fwd * (2f + R * 2.5f) + Vector3.up * 0.4f,
+                startSize = 0.5f + R * 0.5f,
+                startLifetime = 1.4f + R * 1.0f,
+                rotation = R * 360f,
             };
-            b.smoke.Emit(ep, 1);
+            _smoke[i].Emit(ep, 1);
+        }
+
+        private void Emit(ParticleSystem ps, Vector3 pos, float size, float life, Color c, Vector3 vel)
+        {
+            var ep = new ParticleSystem.EmitParams
+            {
+                position = pos,
+                applyShapeToPosition = false,
+                velocity = vel,
+                startSize = size,
+                startLifetime = life,
+                startColor = c,
+                rotation = R * 360f,
+            };
+            ps.Emit(ep, 1);
         }
 
         private void LateUpdate()
         {
-            if (_b == null) return;
-            float dt = Time.deltaTime;
-            Vector3 camPos = viewCamera ? viewCamera.transform.position : Vector3.zero;
-            foreach (var b in _b)
-            {
-                if (b.t > flashTime) continue;
-                b.t += dt;
-                if (b.t > flashTime)
-                {
-                    b.burst.gameObject.SetActive(false);
-                    b.tongue.gameObject.SetActive(false);
-                    continue;
-                }
-                // Burst faces the camera; it pops big then shrinks over its short life.
-                float k = b.t / flashTime;
-                b.burst.rotation = Quaternion.LookRotation(b.burst.position - camPos) * Quaternion.Euler(0f, 0f, b.scale * 997f);
-                b.burst.localScale = Vector3.one * burstSize * b.scale * Mathf.Lerp(1.15f, 0.6f, k);
-            }
-            _lightT += dt;
-            _light.intensity = _lightT < flashTime * 1.4f ? lightIntensity * (1f - _lightT / (flashTime * 1.4f)) : 0f;
+            _lightT += Time.deltaTime;
+            float lt = flashLife * 1.3f;
+            if (_light != null) _light.intensity = _lightT < lt ? lightIntensity * (1f - _lightT / lt) * (0.85f + R * 0.3f) : 0f;
         }
 
-        private GameObject Part(string n, Transform parent, Material m)
+        private ParticleSystem MakeFire(Transform muzzle)
         {
-            var go = new GameObject(n);
-            go.transform.SetParent(parent, false);
-            go.AddComponent<MeshFilter>().sharedMesh = _quad;
-            var r = go.AddComponent<MeshRenderer>();
-            r.sharedMaterial = m;
+            var go = new GameObject("MuzzleFire");
+            go.transform.SetParent(muzzle, false);
+            var ps = go.AddComponent<ParticleSystem>();
+            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            var main = ps.main;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.playOnAwake = false;
+            main.maxParticles = 60;
+            var em = ps.emission; em.enabled = false;
+            var shape = ps.shape; shape.enabled = false;
+            // Pick one of four fireball shapes at random (no animation: real flash is a single exposure).
+            var sheet = ps.textureSheetAnimation;
+            sheet.enabled = true;
+            sheet.numTilesX = 2;
+            sheet.numTilesY = 2;
+            sheet.animation = ParticleSystemAnimationType.WholeSheet;
+            sheet.frameOverTime = new ParticleSystem.MinMaxCurve(0f);
+            sheet.startFrame = new ParticleSystem.MinMaxCurve(0f, 3.999f);
+            sheet.cycleCount = 1;
+            // Swell slightly and fade fast.
+            var size = ps.sizeOverLifetime; size.enabled = true;
+            size.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.EaseInOut(0f, 0.85f, 1f, 1.25f));
+            var col = ps.colorOverLifetime; col.enabled = true;
+            var g = new Gradient();
+            g.SetKeys(new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(new Color(1f, 0.6f, 0.3f), 1f) },
+                      new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(0.7f, 0.5f), new GradientAlphaKey(0f, 1f) });
+            col.color = g;
+            var r = go.GetComponent<ParticleSystemRenderer>();
+            r.sharedMaterial = fireMaterial;
+            r.renderMode = ParticleSystemRenderMode.Billboard;
             r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             r.receiveShadows = false;
-            return go;
+            ps.Play();
+            return ps;
         }
 
         private ParticleSystem MakeSmoke(Transform muzzle)
@@ -164,70 +194,80 @@ namespace AirDefense.Weapons
             return ps;
         }
 
-        /// <summary>Unit quad in the XY plane, centred horizontally, from z=0 forward for tongues.</summary>
-        private static Mesh BuildQuad()
-        {
-            // Burst uses it centred; tongue quads are rotated so the quad's +Y runs along the bore.
-            var m = new Mesh { name = "FlashQuad" };
-            m.vertices = new[] { new Vector3(-0.5f, -0.5f, 0), new Vector3(0.5f, -0.5f, 0), new Vector3(0.5f, 0.5f, 0), new Vector3(-0.5f, 0.5f, 0) };
-            m.uv = new[] { new Vector2(0, 0), new Vector2(1, 0), new Vector2(1, 1), new Vector2(0, 1) };
-            m.triangles = new[] { 0, 2, 1, 0, 3, 2 };
-            m.RecalculateNormals();
-            m.RecalculateBounds();
-            return m;
-        }
-
         // ------------------------------------------------------------ textures
 
-        /// <summary>Star-burst flash texture: hot core plus 6 irregular spikes.</summary>
-        public static Texture2D MakeBurstTexture(int size = 128, int seed = 3)
+        /// <summary>
+        /// 2x2 sheet of turbulent fireballs: fractal value noise warps a radial falloff so every
+        /// tile is an irregular blob with a hot centre and ragged edges (not a geometric star).
+        /// </summary>
+        public static Texture2D MakeFireballSheet(int tile = 128)
         {
-            var rnd = new System.Random(seed);
-            var spikes = new float[6];
-            var widths = new float[6];
-            for (int i = 0; i < 6; i++) { spikes[i] = (float)(i * 60 + rnd.Next(-14, 14)); widths[i] = 0.10f + (float)rnd.NextDouble() * 0.08f; }
-            var tex = new Texture2D(size, size, TextureFormat.RGBA32, true) { wrapMode = TextureWrapMode.Clamp, name = "FlashBurst" };
-            var px = new Color32[size * size];
-            for (int y = 0; y < size; y++)
-            for (int x = 0; x < size; x++)
+            int size = tile * 2;
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, true) { wrapMode = TextureWrapMode.Clamp, name = "FireballSheet" };
+            var px = new Color[size * size];
+            for (int ty = 0; ty < 2; ty++)
+            for (int tx = 0; tx < 2; tx++)
             {
-                float dx = (x + 0.5f) / size * 2f - 1f, dy = (y + 0.5f) / size * 2f - 1f;
-                float r = Mathf.Sqrt(dx * dx + dy * dy);
-                float ang = Mathf.Atan2(dy, dx) * Mathf.Rad2Deg;
-                float core = Mathf.Clamp01(1f - r / 0.38f);
-                float spike = 0f;
-                for (int i = 0; i < 6; i++)
+                float seed = 13.7f + (ty * 2 + tx) * 41.3f;
+                for (int y = 0; y < tile; y++)
+                for (int x = 0; x < tile; x++)
                 {
-                    float d = Mathf.Abs(Mathf.DeltaAngle(ang, spikes[i])) / 60f;
-                    float w = widths[i] * (1f - r);
-                    spike = Mathf.Max(spike, Mathf.Clamp01(1f - d / Mathf.Max(0.01f, w)) * Mathf.Clamp01(1f - r));
+                    float u = (x + 0.5f) / tile * 2f - 1f, v = (y + 0.5f) / tile * 2f - 1f;
+                    // Domain warp: push the sample point around with 2D noise so the blob billows
+                    // in lumps (no radial streaks, which read as a cartoon star).
+                    float wu = u + 0.45f * (Fbm(u * 1.6f + seed, v * 1.6f + 3.1f, 4) - 0.5f);
+                    float wv = v + 0.45f * (Fbm(u * 1.6f - 7.7f, v * 1.6f + seed, 4) - 0.5f);
+                    float r = Mathf.Sqrt(wu * wu + wv * wv);
+                    float edge = 0.62f + 0.3f * (Fbm(wu * 2.2f + seed, wv * 2.2f - seed, 4) - 0.5f) * 2f;
+                    float turb = Fbm(wu * 4.5f + seed, wv * 4.5f - seed, 5);
+                    float m = Mathf.Clamp01(1f - r / Mathf.Max(0.2f, edge));
+                    float a = Mathf.SmoothStep(0f, 1f, m) * Mathf.Lerp(0.45f, 1.2f, turb);
+                    a = Mathf.Clamp01(a);
+                    float heat = Mathf.Clamp01(m * 1.5f * turb + 0.15f);
+                    Color c = Color.Lerp(new Color(1f, 0.45f, 0.12f), new Color(1f, 0.97f, 0.85f), heat * heat);
+                    px[(ty * tile + y) * size + tx * tile + x] = new Color(c.r, c.g, c.b, a);
                 }
-                float a = Mathf.Clamp01(core * core * 1.2f + spike * 0.9f);
-                float heat = Mathf.Clamp01(core * 1.4f); // white-hot centre, orange edges
-                var c = Color.Lerp(new Color(1f, 0.55f, 0.18f), new Color(1f, 0.95f, 0.8f), heat);
-                px[y * size + x] = new Color(c.r, c.g, c.b, a);
             }
-            tex.SetPixels32(px);
+            tex.SetPixels(px);
             tex.Apply(true);
             return tex;
         }
 
-        /// <summary>Flame-tongue texture: bright at the muzzle (bottom), tapering and fading forward (top).</summary>
-        public static Texture2D MakeTongueTexture(int w = 64, int h = 128)
+        private static float Fbm(float x, float y, int octaves)
         {
-            var tex = new Texture2D(w, h, TextureFormat.RGBA32, true) { wrapMode = TextureWrapMode.Clamp, name = "FlashTongue" };
-            var px = new Color32[w * h];
+            float sum = 0f, amp = 0.5f, freq = 1f, norm = 0f;
+            for (int i = 0; i < octaves; i++)
+            {
+                sum += amp * Mathf.PerlinNoise(x * freq, y * freq);
+                norm += amp;
+                amp *= 0.5f;
+                freq *= 2.03f;
+            }
+            return sum / norm;
+        }
+
+        /// <summary>
+        /// Tracer streak: bright glowing head at the front (v=1), fading tail behind (v=0),
+        /// soft glowing edges across (u). Rendered stretched along the round's velocity.
+        /// </summary>
+        public static Texture2D MakeTracerTexture(int w = 32, int h = 128)
+        {
+            var tex = new Texture2D(w, h, TextureFormat.RGBA32, true) { wrapMode = TextureWrapMode.Clamp, name = "TracerStreak" };
+            var px = new Color[w * h];
             for (int y = 0; y < h; y++)
             for (int x = 0; x < w; x++)
             {
-                float v = (y + 0.5f) / h;                 // 0 at muzzle, 1 at tip
+                float v = (y + 0.5f) / h;
                 float u = Mathf.Abs((x + 0.5f) / w * 2f - 1f);
-                float width = Mathf.Lerp(0.55f, 0.08f, v) + 0.12f * Mathf.Sin(v * 9f) * (1f - v);
-                float a = Mathf.Clamp01(1f - u / Mathf.Max(0.02f, width)) * Mathf.Pow(1f - v, 1.4f);
-                var c = Color.Lerp(new Color(1f, 0.9f, 0.7f), new Color(1f, 0.45f, 0.12f), v);
+                float across = Mathf.Exp(-u * u * 9f);             // soft glow
+                float core = Mathf.Exp(-u * u * 60f);              // thin bright line
+                float along = Mathf.Pow(v, 2.2f);                  // tail fades out
+                float head = Mathf.Exp(-(1f - v) * (1f - v) * 400f); // bright head
+                float a = Mathf.Clamp01((across * 0.55f + core) * along + head * across);
+                Color c = Color.Lerp(new Color(1f, 0.35f, 0.15f), new Color(1f, 0.85f, 0.6f), core * 0.8f + head);
                 px[y * w + x] = new Color(c.r, c.g, c.b, a);
             }
-            tex.SetPixels32(px);
+            tex.SetPixels(px);
             tex.Apply(true);
             return tex;
         }

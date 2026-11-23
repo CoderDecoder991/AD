@@ -31,6 +31,8 @@ Single source of truth for project decisions. Every other document refers back h
 | C-16 | Development PC: i5-6400, 16 GB RAM, GT 730. Performance is judged on the device, not in the editor. | User, 2026-11-23 |
 | C-17 | Engine: **Unity 6 LTS with URP** (was R-01, closes O-05). | User, 2026-11-23 |
 | C-17a | Installed editor is **6000.6.10f1 (Unity 6.6)**. Unity Hub lists it as a "Supported" release, not LTS. Acceptable for M0; review moving to an LTS version before M2 (see O-12). | Install, 2026-11-23 |
+| C-21 | Third-person camera behind and above the selected weapon, showing the full model; view tilted 10° down, crosshair follows the real aim point (replaces the first-person operator view of R-03). | User, 2026-11-23 |
+| C-22 | All three weapon models shown in the base (C-RAM and Tunguska on raised positions; display-only until M3/M4). The supplied Sketchfab C-RAM model is used, with its required CC-BY credit (closes O-13 by user direction). | User, 2026-11-23 |
 | C-20 | ZU-23-2 firing sound uses the user's own Tunguska recording (opening shot + seamless loop + echo tail), pitched x1.05. | User, 2026-11-23 |
 | C-19 | Aim by dragging on the **left** side of the screen; FIRE stays bottom-right (replaces R-06 "right ~60%"). | User, 2026-11-23 |
 | C-18 | Project lives on the C: SSD at `C:\dev\AirDefense`, in Git with Git LFS (was R-17). | User approved M0 plan, 2026-11-23 |
@@ -75,7 +77,7 @@ Single source of truth for project decisions. Every other document refers back h
 | O-09 | Which Pad 8 model (8 GB or 12 GB RAM)? | Memory budget on the test device. | Budget against 8 GB. |
 | O-10 | A second, cheaper Android test phone? | Validating Medium/Low tiers. | Use a cloud device-testing service before release. |
 | O-11 | Game title, branding and Android package name? | Store listing, UI. The package name is permanent after the first Play upload. | Working title "AirDefense"; package `com.placeholder.airdefense` (dev only). |
-| O-13 | Use the supplied Sketchfab C-RAM model (CC-BY, "Centurion C-RAM")? The required credit must show the author's Sketchfab profile link, and that profile's username contains the word "nazi". | That link would appear in the credits and store listing. | Hold. Decide before M3. Alternatives: another CC-BY or bought model, or commission one. |
+| ~~O-13~~ | **Closed 2026-11-23 (C-22): used at user direction.** Use the supplied Sketchfab C-RAM model (CC-BY, "Centurion C-RAM")? The required credit must show the author's Sketchfab profile link, and that profile's username contains the word "nazi". | That link would appear in the credits and store listing. | Hold. Decide before M3. Alternatives: another CC-BY or bought model, or commission one. |
 | O-12 | Stay on Unity 6.6 ("Supported") or move to an LTS release before M2? | LTS gets longer bug-fix support. | Stay on 6.6 for M0–M1. |
 
 ## 4. Assumptions
@@ -92,6 +94,7 @@ Single source of truth for project decisions. Every other document refers back h
 | 2026-11-23 | Document created from the handoff brief. C-15, C-16 confirmed by user. All R-items proposed. |
 | 2026-11-23 | User approved Unity 6 + URP and started M0. R-01 → C-17, R-17 → C-18, O-05 closed. Docs moved to `C:\dev\AirDefense`. |
 | 2026-11-23 | Unity project created (6000.6.10f1, URP). Unapproved packages Unity added by default (Unity IAP, Unity Analytics) removed per C-12, along with unused 2D/multiplayer/navigation/collab packages. Added C-17a, O-12. |
+| 2026-11-23 | User: show all three weapons in full, third-person view; muzzle flash looked animated, want real flash and bullet travel. Implemented C-21, C-22, turbulent fireball flash, glowing tracer streaks. |
 | 2026-11-23 | User confirmed the ZU-23-2 sound built from their own Tunguska recording "sounds right" (C-20). |
 | 2026-11-23 | User feedback: sound not realistic, add realistic muzzle flash and recoil, aim on the left. Implemented layered autocannon sound, muzzle flash (burst, flame tongue, light, smoke), per-barrel recoil + camera kick + muzzle climb (Screen shake setting), left-side aiming (C-19). |
 | 2026-11-23 | M1 greybox built and verified on the Pad 8. User supplied three .glb weapon models; their metadata shows Sketchfab CC-BY-4.0 downloads by third-party authors. Recorded in ASSET_REGISTER. Added O-13. |

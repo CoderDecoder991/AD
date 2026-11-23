@@ -108,6 +108,10 @@ namespace AirDefense.EditorTools
             v.explosion = m["Explosion"];
             v.impactFlash = m["Impact"];
             v.navLight = m["NavLight"];
+            // Tracer: glowing streak texture, additive, HDR red-orange (Soviet-style red tracer) so bloom makes it glow.
+            var tracerMat = NightBaseDresser.AdditiveParticleMaterial("TracerStreak", GeneratedTexture("TracerStreak.png", () => MuzzleFlashFX.MakeTracerTexture()));
+            tracerMat.SetColor("_BaseColor", new Color(3.4f, 1.3f, 0.55f, 1f));
+            v.tracer = tracerMat;
             v.cube = Resources.GetBuiltinResource<Mesh>("Cube.fbx");
             v.sphere = Resources.GetBuiltinResource<Mesh>("Sphere.fbx");
             v.cylinder = Resources.GetBuiltinResource<Mesh>("Cylinder.fbx");
@@ -363,6 +367,7 @@ namespace AirDefense.EditorTools
             var beamMat = NightBaseDresser.AdditiveParticleMaterial("SearchlightBeam", Texture2D.whiteTexture);
             beamMat.SetTexture("_BaseMap", null); // vertex alpha drives the fade; cone has no UVs
             NightBaseDresser.DressBase(env, gunRoot, bermHeight, beamMat);
+            NightBaseDresser.PlaceDisplayWeapons(env, m["Concrete"], m["Sandbag"]);
 
             // Systems.
             var systems = new GameObject("Systems").transform;
@@ -376,6 +381,7 @@ namespace AirDefense.EditorTools
             proj.transform.SetParent(systems, false);
             proj.visuals = visuals;
             proj.threats = threatMgr;
+            proj.viewCamera = cam;
 
             var inputGo = new GameObject("PlayerInput");
             inputGo.transform.SetParent(systems, false);
@@ -395,12 +401,10 @@ namespace AirDefense.EditorTools
             var flash = gunRoot.gameObject.AddComponent<MuzzleFlashFX>();
             flash.mount = mount;
             flash.viewCamera = cam;
-            var burstMat = NightBaseDresser.AdditiveParticleMaterial("MuzzleFlashBurst", GeneratedTexture("FlashBurst.png", () => MuzzleFlashFX.MakeBurstTexture()));
-            burstMat.SetColor("_BaseColor", new Color(4.2f, 3.2f, 2.2f, 1f));
-            var tongueMat = NightBaseDresser.AdditiveParticleMaterial("MuzzleFlashTongue", GeneratedTexture("FlashTongue.png", () => MuzzleFlashFX.MakeTongueTexture()));
-            tongueMat.SetColor("_BaseColor", new Color(3.6f, 2.5f, 1.5f, 1f));
-            flash.burstMaterial = burstMat;
-            flash.tongueMaterial = tongueMat;
+            // Turbulent fireball sheet (2x2 noise-generated shapes), additive, HDR so the core blooms.
+            var fireMat = NightBaseDresser.AdditiveParticleMaterial("MuzzleFireball", GeneratedTexture("FireballSheet.png", () => MuzzleFlashFX.MakeFireballSheet()));
+            fireMat.SetColor("_BaseColor", new Color(4.0f, 3.0f, 2.2f, 1f));
+            flash.fireMaterial = fireMat;
             flash.smokeMaterial = NightBaseDresser.AlphaParticleMaterial("MuzzleSmoke", NightBaseDresser.SoftDotAsset());
             ctrl.muzzleFlash = flash;
 

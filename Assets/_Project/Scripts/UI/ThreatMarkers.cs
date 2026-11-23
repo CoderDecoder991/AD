@@ -12,6 +12,7 @@ namespace AirDefense.UI
     /// visible threat, an edge arrow for threats off-screen, and (Light aim
     /// assist) a lead ring showing where to aim at the threat nearest the sight.
     /// </summary>
+    [DefaultExecutionOrder(200)] // after the camera moves, so markers don't lag a frame
     public sealed class ThreatMarkers : MonoBehaviour
     {
         public ThreatManager threats;

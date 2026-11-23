@@ -308,6 +308,41 @@ namespace AirDefense.EditorTools
             Searchlight(env, new Vector3(70f, 0f, 70f), -20f, 7f, beamMat);
         }
 
+        /// <summary>
+        /// The C-RAM and 2K22 Tunguska shown in full at their firing positions (user request), facing
+        /// north. Display-only until they become playable (C-RAM in M3, Tunguska in M4).
+        /// Models: CC-BY 4.0 (Sketchfab), scaled by tools/blender/process_display_weapons.py.
+        /// </summary>
+        public static void PlaceDisplayWeapons(Transform env, Material concrete, Material sandbag)
+        {
+            // On raised earth positions (like the ZU's), so they stand clear of the ZU mound's front edge
+            // in the third-person view. pad.y = mound height.
+            Place("CRAM", "C-RAM (display until M3)", new Vector3(-14f, 0f, -8f), 0f, new Vector3(10f, 9f, 10f));
+            Place("Tunguska", "2K22 Tunguska (display until M4)", new Vector3(14f, 0f, -10f), -6f, new Vector3(9f, 7f, 13f));
+
+            void Place(string model, string label, Vector3 pos, float yaw, Vector3 pad)
+            {
+                var asset = AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/_Project/Art/Models/{model}/{model}.gltf");
+                if (asset == null) return;
+                var root = new GameObject(label).transform;
+                root.SetParent(env, false);
+                root.position = pos;
+                Box(root, "Mound", pos + Vector3.up * (pad.y / 2f), pad, sandbag, 3f)
+                    .GetComponent<MeshRenderer>().shadowCastingMode = ShadowCastingMode.On;
+                Box(root, "Pad", pos + Vector3.up * (pad.y + 0.1f), new Vector3(pad.x - 1.5f, 0.2f, pad.z - 1.5f), concrete, 4f);
+                var go = (GameObject)PrefabUtility.InstantiatePrefab(asset, root);
+                go.transform.position = pos + Vector3.up * (pad.y + 0.2f);
+                go.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
+                foreach (var r in go.GetComponentsInChildren<MeshRenderer>(true))
+                    r.shadowCastingMode = ShadowCastingMode.On;
+                // A low sandbag wall on the threat side and barriers at the corners.
+                // Low sandbag parapet on the threat (north) edge of the mound top, and barriers at the foot.
+                Box(root, "Sandbags", pos + new Vector3(0f, pad.y + 0.5f, pad.z / 2f - 0.5f), new Vector3(pad.x - 1f, 0.8f, 0.8f), sandbag, 2f);
+                Prop("concrete_barrier", root, pos + new Vector3(-pad.x / 2f - 1f, 0f, -pad.z / 2f), 90f);
+                Prop("concrete_barrier", root, pos + new Vector3(pad.x / 2f + 1f, 0f, -pad.z / 2f), 90f);
+            }
+        }
+
         private static void Searchlight(Transform env, Vector3 basePos, float centerYaw, float phase, Material beamMat)
         {
             var concrete = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Art/Materials/Placeholder/PH_Fence.mat");

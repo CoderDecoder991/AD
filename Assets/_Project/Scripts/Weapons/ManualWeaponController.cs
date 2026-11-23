@@ -19,12 +19,27 @@ namespace AirDefense.Weapons
         [Tooltip("Optional: muzzle flash, light and smoke.")]
         public MuzzleFlashFX muzzleFlash;
 
+        [Header("Camera")]
+        [Tooltip("Third person: camera behind and above the gun so the whole weapon is visible (user request).")]
+        public bool thirdPerson = true;
+        public float thirdPersonDistance = 7.5f;
+        public float thirdPersonHeight = 2.8f;
+        [Tooltip("How much the camera orbits down as the gun elevates (0 = stays level, 1 = follows the barrel).")]
+        [Range(0f, 1f)] public float pitchFollow = 0.6f;
+        [Tooltip("Tilts the view down so the aim point sits in the upper screen and the whole gun is visible below it. The HUD crosshair follows the real aim point.")]
+        public float viewTiltDown = 10f;
+        [Tooltip("Crosshair and bore line meet at this distance (metres), so aim is exact at typical ranges.")]
+        public float aimConvergence = 800f;
+
         [Header("Feel")]
         [Tooltip("Degrees turned when dragging the full screen height, at sensitivity 1 and no zoom.")]
         public float degreesPerScreenHeight = 70f;
         public float normalFov = 60f;
         public float zoomFov = 22f;
         public float fovLerpSpeed = 10f;
+
+        /// <summary>Where the bore line is at the convergence range: the HUD crosshair is drawn here.</summary>
+        public Vector3 AimPoint => mount.pitchPivot.position + mount.BoreDirection * aimConvergence;
 
         public WeaponState State { get; private set; }
         public bool Zoomed { get; private set; }
@@ -90,12 +105,22 @@ namespace AirDefense.Weapons
             Transform a = mount.cameraAnchor;
             Quaternion rot = a.rotation;
             Vector3 pos = a.position;
+            if (thirdPerson)
+            {
+                // Orbit behind the mount: follows traverse fully and elevation partly, never below the mount.
+                Vector3 pivot = mount.yawPivot.position;
+                Quaternion orbit = Quaternion.Euler(-mount.Pitch * pitchFollow, mount.Yaw, 0f);
+                pos = pivot + orbit * new Vector3(0f, thirdPersonHeight, -thirdPersonDistance);
+                pos.y = Mathf.Max(pos.y, pivot.y + 1.2f);
+                // Look at the point the bore hits at the convergence range, so the crosshair is the aim.
+                rot = Quaternion.LookRotation(AimPoint - pos, Vector3.up) * Quaternion.Euler(viewTiltDown, 0f, 0f);
+            }
             if (GameSettings.ScreenShake)
             {
                 float sx = (Mathf.PerlinNoise(Time.time * 40f, 0.3f) - 0.5f) * 2f * _shake;
                 float sy = (Mathf.PerlinNoise(0.7f, Time.time * 40f) - 0.5f) * 2f * _shake;
                 rot *= Quaternion.Euler(-_kickPitch + sy, _kickYaw + sx, 0f);
-                pos -= a.forward * (_kickPitch * 0.02f); // slight rearward jolt with the kick
+                pos -= rot * Vector3.forward * (_kickPitch * 0.02f); // slight rearward jolt with the kick
             }
             operatorCamera.transform.SetPositionAndRotation(pos, rot);
         }

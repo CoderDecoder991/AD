@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: AirDefense.Runtime::AirDefense.Core.PrototypeVisuals
   threatBody: {fileID: 2100000, guid: 2cc2f75ba7a99254eb5b466fa36ef5ad, type: 2}
   threatAccent: {fileID: 2100000, guid: 334cb83cd568031419e6ad4f8f87e3ae, type: 2}
-  tracer: {fileID: 2100000, guid: 5bb8779b9eff5104aac3ead495c3b446, type: 2}
+  tracer: {fileID: 2100000, guid: 2fe84eb2435944c49867fcb79c7a6dfe, type: 2}
   explosion: {fileID: 2100000, guid: c24cfe92c08f8c449a3817f9b8244196, type: 2}
   impactFlash: {fileID: 2100000, guid: bb35bf8b75f6e4f40bdc8a3187b26ecc, type: 2}
   navLight: {fileID: 2100000, guid: cfde508ac4c94d542a5f63b0f04724b5, type: 2}

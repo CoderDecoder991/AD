@@ -8,18 +8,24 @@ namespace AirDefense.Weapons
     /// <summary>
     /// Pooled gun rounds. Each round is a point integrated with gravity; hits are
     /// segment-vs-sphere tests against live threats (no physics colliders), which
-    /// is cheap and reliable at high projectile speed. Tracers are drawn for every
-    /// Nth round with pooled stretched quads.
+    /// is cheap and reliable at high projectile speed. Every Nth round is a tracer:
+    /// a glowing streak (bright head, fading tail) drawn as a camera-facing ribbon
+    /// along the round's velocity, like a tracer seen with motion blur.
     /// </summary>
     public sealed class ProjectileSystem : MonoBehaviour
     {
         public PrototypeVisuals visuals;
         public ThreatManager threats;
-        [Tooltip("Visual tracer length, metres.")]
-        public float tracerLength = 14f;
-        public float tracerWidth = 0.22f;
-        [Tooltip("Tracers stay hidden until this far from the muzzle. The camera sits right behind the gun, so a nearby tracer would fill the screen.")]
-        public float tracerHiddenDistance = 40f;
+        [Tooltip("Streak length, metres (about the distance a 900 m/s round covers in one 60 fps frame).")]
+        public float tracerLength = 15f;
+        [Tooltip("Streak width including its glow, metres.")]
+        public float tracerWidth = 0.38f;
+        [Tooltip("Tracers appear once they have left the muzzle by this distance.")]
+        public float tracerHiddenDistance = 4f;
+        [Tooltip("Camera the streaks face. Defaults to the main camera.")]
+        public Camera viewCamera;
+
+        private static Mesh _ribbon;
 
         private struct Round
         {
@@ -43,6 +49,20 @@ namespace AirDefense.Weapons
         {
             _tracerRoot = new GameObject("Tracers").transform;
             _tracerRoot.SetParent(transform, false);
+            _ribbon ??= BuildRibbon();
+        }
+
+        /// <summary>Unit ribbon along +Z (0..1), width along X, facing +Y; white vertex colours.</summary>
+        private static Mesh BuildRibbon()
+        {
+            var m = new Mesh { name = "TracerRibbon" };
+            m.vertices = new[] { new Vector3(-0.5f, 0, 0), new Vector3(0.5f, 0, 0), new Vector3(0.5f, 0, 1), new Vector3(-0.5f, 0, 1) };
+            m.uv = new[] { new Vector2(0, 0), new Vector2(1, 0), new Vector2(1, 1), new Vector2(0, 1) };
+            m.colors = new[] { Color.white, Color.white, Color.white, Color.white };
+            m.triangles = new[] { 0, 2, 1, 0, 3, 2 };
+            m.RecalculateNormals();
+            m.bounds = new Bounds(new Vector3(0, 0, 0.5f), new Vector3(1, 1, 1));
+            return m;
         }
 
         public void Fire(Vector3 origin, Vector3 direction, float speed, float lifetime, float damage, bool tracer)
@@ -62,6 +82,7 @@ namespace AirDefense.Weapons
         {
             float dt = Time.deltaTime;
             var live = threats.Active;
+            Camera cam = viewCamera != null ? viewCamera : Camera.main;
 
             for (int i = _rounds.Count - 1; i >= 0; i--)
             {
@@ -102,7 +123,16 @@ namespace AirDefense.Weapons
                     {
                         if (!tr.gameObject.activeSelf) tr.gameObject.SetActive(true);
                         Vector3 dir = r.vel.normalized;
-                        tr.SetPositionAndRotation(r.pos - dir * (tracerLength * 0.5f), Quaternion.LookRotation(dir));
+                        // Streak ends at the round (head) and trails behind it; shorter just after the muzzle.
+                        float len = Mathf.Min(tracerLength, r.travelled);
+                        Vector3 tail = r.pos - dir * len;
+                        // Cylindrical billboard: the ribbon turns about its own axis to face the camera.
+                        Vector3 toCam = (cam != null ? cam.transform.position : tail - dir) - tail;
+                        Vector3 side = Vector3.Cross(toCam, dir);
+                        if (side.sqrMagnitude < 1e-6f) side = Vector3.Cross(Vector3.up, dir);
+                        Vector3 normal = Vector3.Cross(dir, side.normalized);
+                        tr.SetPositionAndRotation(tail, Quaternion.LookRotation(dir, normal));
+                        tr.localScale = new Vector3(tracerWidth, 1f, len);
                     }
                 }
 
@@ -120,8 +150,13 @@ namespace AirDefense.Weapons
             }
             else
             {
-                var go = visuals.Part("Tracer", visuals.cube, visuals.tracer, _tracerRoot,
-                    Vector3.zero, new Vector3(tracerWidth, tracerWidth, tracerLength));
+                var go = new GameObject("Tracer");
+                go.transform.SetParent(_tracerRoot, false);
+                go.AddComponent<MeshFilter>().sharedMesh = _ribbon;
+                var mr = go.AddComponent<MeshRenderer>();
+                mr.sharedMaterial = visuals.tracer;
+                mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                mr.receiveShadows = false;
                 go.SetActive(false);
                 _tracerObjects.Add(go.transform);
                 return _tracerObjects.Count - 1;
