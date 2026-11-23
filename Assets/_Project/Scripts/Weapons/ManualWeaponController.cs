@@ -14,6 +14,10 @@ namespace AirDefense.Weapons
         public ProjectileSystem projectiles;
         public PlayerInputState input;
         public Camera operatorCamera;
+        [Tooltip("Optional: per-barrel recoil animation.")]
+        public GunRecoil recoil;
+        [Tooltip("Optional: muzzle flash, light and smoke.")]
+        public MuzzleFlashFX muzzleFlash;
 
         [Header("Feel")]
         [Tooltip("Degrees turned when dragging the full screen height, at sensitivity 1 and no zoom.")]
@@ -28,6 +32,13 @@ namespace AirDefense.Weapons
 
         private System.Random _rng;
         private int _roundCounter;
+
+        // Camera recoil state (degrees), decaying back to zero.
+        private float _kickPitch;
+        private float _kickYaw;
+        private float _shake;
+        private const float KickRecovery = 18f;   // 1/s
+        private const float ShakeRecovery = 22f;  // 1/s
 
         private void Awake()
         {
@@ -70,17 +81,42 @@ namespace AirDefense.Weapons
 
         private void LateUpdate()
         {
+            float dt = Time.deltaTime;
+            float decay = Mathf.Exp(-KickRecovery * dt);
+            _kickPitch *= decay;
+            _kickYaw *= decay;
+            _shake *= Mathf.Exp(-ShakeRecovery * dt);
+
             Transform a = mount.cameraAnchor;
-            operatorCamera.transform.SetPositionAndRotation(a.position, a.rotation);
+            Quaternion rot = a.rotation;
+            Vector3 pos = a.position;
+            if (GameSettings.ScreenShake)
+            {
+                float sx = (Mathf.PerlinNoise(Time.time * 40f, 0.3f) - 0.5f) * 2f * _shake;
+                float sy = (Mathf.PerlinNoise(0.7f, Time.time * 40f) - 0.5f) * 2f * _shake;
+                rot *= Quaternion.Euler(-_kickPitch + sy, _kickYaw + sx, 0f);
+                pos -= a.forward * (_kickPitch * 0.02f); // slight rearward jolt with the kick
+            }
+            operatorCamera.transform.SetPositionAndRotation(pos, rot);
         }
 
         private void FireOne()
         {
             var def = mount.definition;
-            Transform muzzle = mount.NextMuzzle();
+            Transform muzzle = mount.NextMuzzle(out int barrel);
             Vector3 dir = Ballistics.ApplyDispersion(mount.BoreDirection, def.dispersion, _rng);
             bool tracer = def.tracerEvery > 0 && (_roundCounter++ % def.tracerEvery) == 0;
             projectiles.Fire(muzzle.position, dir, def.muzzleVelocity, def.projectileLifetime, def.damagePerRound, tracer);
+
+            // Recoil: barrel slides back, camera kicks, aim climbs a little (the player corrects).
+            if (recoil != null) recoil.Kick(barrel);
+            if (muzzleFlash != null) muzzleFlash.Flash(barrel);
+            _kickPitch = Mathf.Min(_kickPitch + def.cameraKick, def.cameraKick * 4f);
+            _kickYaw += ((float)_rng.NextDouble() - 0.5f) * def.cameraKick * 0.6f;
+            _shake = Mathf.Min(_shake + def.cameraShake, def.cameraShake * 3f);
+            float drift = ((float)_rng.NextDouble() - 0.5f) * 2f * def.muzzleDriftPerRound;
+            mount.AddTarget(drift, def.muzzleClimbPerRound);
+
             GameEvents.RaiseRoundFired(muzzle.position);
         }
     }

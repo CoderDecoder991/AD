@@ -47,6 +47,20 @@ namespace AirDefense.Data
         [Tooltip("When overheated, firing is blocked until heat falls below this.")]
         public float overheatRecoverBelow = 0.3f;
 
+        [Header("Recoil (feel)")]
+        [Tooltip("How far each barrel slides back per shot, metres.")]
+        public float barrelRecoilDistance = 0.12f;
+        [Tooltip("Time for a barrel to return to battery, seconds.")]
+        public float barrelReturnTime = 0.09f;
+        [Tooltip("Camera kick upward per shot, degrees (decays quickly).")]
+        public float cameraKick = 0.22f;
+        [Tooltip("Random camera shake per shot, degrees.")]
+        public float cameraShake = 0.12f;
+        [Tooltip("Muzzle climb added to the aim per round, degrees (player must correct).")]
+        public float muzzleClimbPerRound = 0.02f;
+        [Tooltip("Random sideways drift per round, degrees.")]
+        public float muzzleDriftPerRound = 0.012f;
+
         [Header("Ranges (for HUD/AI)")]
         public float minRange = 50f;
         public float maxRange = 1500f;

@@ -64,11 +64,14 @@ namespace AirDefense.Weapons
 
         public Vector3 BoreDirection => pitchPivot.forward;
 
-        public Transform NextMuzzle()
+        public Transform NextMuzzle() => NextMuzzle(out _);
+
+        /// <summary>Alternates between muzzles; also returns which one fired (for recoil and flash).</summary>
+        public Transform NextMuzzle(out int index)
         {
-            var m = muzzles[_nextMuzzle % muzzles.Length];
+            index = _nextMuzzle % muzzles.Length;
             _nextMuzzle++;
-            return m;
+            return muzzles[index];
         }
     }
 }

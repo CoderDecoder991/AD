@@ -59,7 +59,7 @@ Tracks every asset we need, its status and its licence. **Nothing ships without 
 
 | ID | Asset | Needed by | Source | Status | Licence |
 |---|---|---|---|---|---|
-| S-01 | ZU-23-2 fire, reload, handwheels | M1 | `zu23_shot_1-3.wav` from Shotgun 1 / Impact Rash 1 / Pistol 2 (pitched ×0.66-0.72, trimmed); `reload_residue.ogg`, `empty_clip_residue.ogg` | Integrated (M2); handwheels: Needed | **CC0**, "Impacts + Guns SFX", opengameart.org/content/impactsgunsfx; **CC0**, "Residue SFX", opengameart.org/content/residue-sfx |
+| S-01 | ZU-23-2 fire, reload, handwheels | M1 | `zu23_round_1-4.wav`: layered: crack (first 30 ms of Shotgun 1, high-passed) + synthesised boom/body/clank/early reflections; `zu23_tail.wav` synthesised burst echo (older `zu23_shot_1-3` kept as fallback); `reload_residue.ogg`, `empty_clip_residue.ogg` | Integrated (M2); handwheels: Needed | **CC0**, "Impacts + Guns SFX", opengameart.org/content/impactsgunsfx; **CC0**, "Residue SFX", opengameart.org/content/residue-sfx |
 | S-02 | C-RAM fire (continuous), spin-up | M3 | Store / designed | Needed | — |
 | S-03 | Tunguska guns, missile launch | M4 | Store / designed | Needed | — |
 | S-04 | Explosions (near, far), impacts | M1 | `airburst_1-2`, `impact_base`, `distant_rumble` (processed by `tools/audio/make_sfx.py`), `boom_residue.ogg` | Integrated (M2) | **CC0**, "Impacts + Guns SFX", opengameart.org/content/impactsgunsfx; **CC0**, "Residue SFX", opengameart.org/content/residue-sfx |

@@ -41,6 +41,8 @@ A short-range, high-rate manual gun. It teaches leading targets, burst disciplin
 | Reload time (s) | 4.0 | 6.0 |
 | Heat per second of fire / cooling per second | 0.20 / 0.15 (overheat lock until < 0.30) — M1 tuned | n/a (bursts only) |
 | Muzzle velocity (m/s) / round lifetime (s) | 900 / 2.2 — M1 | 900 / 2.2 |
+| Recoil: barrel travel / return time | 0.12 m / 0.09 s, barrels alternate | — |
+| Recoil: camera kick / shake / muzzle climb per round | 0.22° / 0.12° / 0.02° (+ ±0.012° drift) | — |
 | Damage per round | 1.0 | 1.0 |
 | Dispersion (°, std. dev.) | 0.35 — M1 tuned | 1.2 |
 | Reaction delay (s) | — | 1.5 |

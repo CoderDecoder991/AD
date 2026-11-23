@@ -10,6 +10,8 @@ namespace AirDefense.Core
     public sealed class AudioBank : ScriptableObject
     {
         public AudioClip[] zuShots;
+        [Tooltip("Rolling echo played when a burst ends.")]
+        public AudioClip zuBurstTail;
         public AudioClip[] airbursts;
         public AudioClip impactBase;
         public AudioClip boom;

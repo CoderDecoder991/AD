@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: Mission_M1_Greybox
   m_EditorClassIdentifier: AirDefense.Runtime::AirDefense.Data.MissionDefinition
   missionId: m1_greybox
-  title: Night Watch (greybox)
+  title: Night Watch
   briefing: 'Radar reports small drones approaching the installation.
 
 
-    You are on the ZU-23-2. Drag on the right side of the screen to aim, hold FIRE to shoot. Brackets mark targets on screen; arrows at the edge point to targets you can''t see.
+    You are on the ZU-23-2. Drag on the left side of the screen to aim, hold FIRE with your right thumb. Brackets mark targets on screen; arrows at the edge point to targets you can''t see.
 
 
     Moving targets need leading: aim at the yellow ring.

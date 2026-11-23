@@ -13,9 +13,11 @@ MonoBehaviour:
   m_Name: AudioBank
   m_EditorClassIdentifier: AirDefense.Runtime::AirDefense.Core.AudioBank
   zuShots:
-  - {fileID: 8300000, guid: 26fa0f72ce6912945b1b62aaa7f8a45f, type: 3}
-  - {fileID: 8300000, guid: 9bc8487803bb2374ca0de00755ecefaa, type: 3}
-  - {fileID: 8300000, guid: bb23061c7f86ec343993145fbfccae4c, type: 3}
+  - {fileID: 8300000, guid: 9e86f45ba2be2844294d06ea73363eff, type: 3}
+  - {fileID: 8300000, guid: d63d639301647bb459a9a9a7e67a9021, type: 3}
+  - {fileID: 8300000, guid: 29fefed266c91fa4f8f6b6934b9c4846, type: 3}
+  - {fileID: 8300000, guid: befb76185a4a5714389e618cfd4bcfce, type: 3}
+  zuBurstTail: {fileID: 8300000, guid: 1172e9d69dbd3854497044a7663793c5, type: 3}
   airbursts:
   - {fileID: 8300000, guid: d316e9af94258ac4888000d7e6704427, type: 3}
   - {fileID: 8300000, guid: 6cd32d07c45ca5d4185602ef4452fdb6, type: 3}
@@ -28,7 +30,7 @@ MonoBehaviour:
   warningTone: {fileID: 8300000, guid: 67f882eeb25ed094e85680436b2f15d0, type: 3}
   radarPing: {fileID: 8300000, guid: af350ad44b72e56428725cb578c66be1, type: 3}
   radioStaticLoop: {fileID: 8300000, guid: e2da142cade87654b83e881ab7a88645, type: 3}
-  gunVolume: 0.55
+  gunVolume: 0.45
   explosionVolume: 0.9
   alertVolume: 0.45
   ambienceVolume: 0.12

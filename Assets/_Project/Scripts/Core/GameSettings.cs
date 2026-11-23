@@ -28,6 +28,13 @@ namespace AirDefense.Core
             set { S.aimAssist = (int)value; ProfileStore.Save(); }
         }
 
+        /// <summary>Camera recoil kick and shake (accessibility: can be turned off).</summary>
+        public static bool ScreenShake
+        {
+            get => S.screenShake;
+            set { S.screenShake = value; ProfileStore.Save(); }
+        }
+
         /// <summary>-1 = automatic, otherwise a forced <see cref="QualityTier"/>.</summary>
         public static int QualityOverride
         {

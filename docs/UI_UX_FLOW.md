@@ -71,7 +71,7 @@ Gameplay ─► Mission end ─► After-action report ─► Rewards (rewarded-
 ## 5. Controls (R-06)
 | Action | Default control |
 |---|---|
-| Aim | Drag on the right ~60% of the screen |
+| Aim | Drag on the **left** ~60% of the screen (changed 2026-11-23 at the user's request; FIRE stays bottom-right) |
 | Fire | Hold the large FIRE button (bottom-right) |
 | Switch weapon | Tap a weapon tile |
 | Reload | Automatic when empty; tap the ammo bar to reload early |

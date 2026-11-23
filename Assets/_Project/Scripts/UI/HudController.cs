@@ -31,6 +31,7 @@ namespace AirDefense.UI
         private readonly System.Collections.Generic.List<(Data.WeaponDefinition def, Text state, Image bg)> _tiles =
             new System.Collections.Generic.List<(Data.WeaponDefinition, Text, Image)>();
         private Text _qualityText;
+        private Text _shakeText;
         private Text _endRewards;
         private Image _unlockFill;
         private Text _unlockText;
@@ -123,7 +124,8 @@ namespace AirDefense.UI
         {
             // Aim area first so buttons draw (and receive touches) above it.
             var aim = UiFactory.Image("AimArea", _safe, new Color(0f, 0f, 0f, 0f), raycast: true);
-            aim.rectTransform.Stretch(new Vector2(0.4f, 0f), Vector2.one);
+            // Left 60% (user request 2026-11-23): left thumb aims, right thumb holds FIRE.
+            aim.rectTransform.Stretch(Vector2.zero, new Vector2(0.6f, 1f));
             var aimPanel = aim.gameObject.AddComponent<AimPanel>();
             aimPanel.input = input;
             aimPanel.FirstDrag = () => _dragged = true;
@@ -284,14 +286,15 @@ namespace AirDefense.UI
             var t = UiFactory.Text("Title", card, "PAUSED", 52, TextAnchor.UpperCenter, UiFactory.Accent);
             t.rectTransform.Stretch(new Vector2(0f, 0.86f), new Vector2(1f, 0.96f));
 
-            _sensText = Row(card, 0.76f, "Aim sensitivity", () => ChangeSensitivity(-0.1f), () => ChangeSensitivity(0.1f));
-            _invertText = Row(card, 0.64f, "Invert vertical", () => { GameSettings.InvertY = !GameSettings.InvertY; RefreshSettings(); }, null);
-            _assistText = Row(card, 0.52f, "Aim assist (lead ring)", () =>
+            _sensText = Row(card, 0.79f, "Aim sensitivity", () => ChangeSensitivity(-0.1f), () => ChangeSensitivity(0.1f));
+            _invertText = Row(card, 0.69f, "Invert vertical", () => { GameSettings.InvertY = !GameSettings.InvertY; RefreshSettings(); }, null);
+            _assistText = Row(card, 0.59f, "Aim assist (lead ring)", () =>
             {
                 GameSettings.Assist = GameSettings.Assist == AimAssist.Off ? AimAssist.Light : AimAssist.Off;
                 RefreshSettings();
             }, null);
-            _qualityText = Row(card, 0.40f, "Graphics quality", () =>
+            _shakeText = Row(card, 0.49f, "Screen shake (recoil)", () => { GameSettings.ScreenShake = !GameSettings.ScreenShake; RefreshSettings(); }, null);
+            _qualityText = Row(card, 0.39f, "Graphics quality", () =>
             {
                 // AUTO -> LOW -> MEDIUM -> HIGH -> AUTO
                 int q = GameSettings.QualityOverride;
@@ -437,7 +440,7 @@ namespace AirDefense.UI
             string text = "";
             if (!_dragged)
             {
-                text = "Drag on the right side of the screen to aim";
+                text = "Drag on the left side of the screen to aim";
             }
             else if (!_fired && threats.Active.Count > 0)
             {
@@ -565,6 +568,7 @@ namespace AirDefense.UI
             _invertText.text = GameSettings.InvertY ? "ON" : "OFF";
             _assistText.text = GameSettings.Assist == AimAssist.Light ? "ON" : "OFF";
             _qualityText.text = QualityTiers.Label(GameSettings.QualityOverride);
+            _shakeText.text = GameSettings.ScreenShake ? "ON" : "OFF";
         }
 
         private static void Restart()

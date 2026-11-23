@@ -79,6 +79,23 @@ bpy.ops.object.parent_clear(type="CLEAR_KEEP_TRANSFORM")
 bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
 
 before = sum(tri_count(o) for o in all_meshes)
+
+# Split the twin-barrel group into left (+Y) and right (-Y) barrels so each can
+# recoil on its own (they fire alternately). Parts near the centre line stay on the cradle.
+BARRELS = "Twin_barrel_visuals_244"
+if BARRELS in group_objs:
+    left, right, centre = [], [], []
+    for o in group_objs[BARRELS]:
+        cy = sum((o.matrix_world @ v.co).y for v in o.data.vertices) / max(1, len(o.data.vertices))
+        (left if cy > 0.02 else right if cy < -0.02 else centre).append(o)
+    print(f"[process_zu23] barrel parts: left={len(left)} right={len(right)} centre={len(centre)}")
+    group_objs[BARRELS] = centre
+    group_objs[BARRELS + "_L"] = left
+    group_objs[BARRELS + "_R"] = right
+    GROUPS[BARRELS + "_L"] = ("ZU_Barrel_L", GROUPS[BARRELS][1])
+    GROUPS[BARRELS + "_R"] = ("ZU_Barrel_R", GROUPS[BARRELS][1])
+    group_objs = {k: v for k, v in group_objs.items() if v}
+
 parts = {}
 for name, objs in group_objs.items():
     part, ratio = GROUPS[name]
@@ -123,10 +140,14 @@ def set_origin(obj, point):
 set_origin(rig["ZU_Base"], Vector((0, 0, 0)))
 set_origin(rig["ZU_Yaw"], YAW_PIVOT)
 set_origin(rig["ZU_Pitch"], PITCH_PIVOT)
+for b in ("ZU_Barrel_L", "ZU_Barrel_R"):
+    if b in rig:
+        set_origin(rig[b], PITCH_PIVOT)
 
 # Muzzle empties: average the barrel-tip vertices on each side.
 pitch = rig["ZU_Pitch"]
-xs = [(pitch.matrix_world @ v.co) for v in pitch.data.vertices]
+tip_sources = [rig[b] for b in ("ZU_Barrel_L", "ZU_Barrel_R") if b in rig] or [pitch]
+xs = [(o.matrix_world @ v.co) for o in tip_sources for v in o.data.vertices]
 max_x = max(p.x for p in xs)
 tips = [p for p in xs if p.x > max_x - 0.03]
 muzzles = {}
@@ -146,6 +167,9 @@ def parent_keep(child, parent):
 
 parent_keep(rig["ZU_Yaw"], rig["ZU_Base"])
 parent_keep(rig["ZU_Pitch"], rig["ZU_Yaw"])
+for b in ("ZU_Barrel_L", "ZU_Barrel_R"):
+    if b in rig:
+        parent_keep(rig[b], rig["ZU_Pitch"])
 for e in muzzles.values():
     parent_keep(e, rig["ZU_Pitch"])
 

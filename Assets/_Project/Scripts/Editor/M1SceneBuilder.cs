@@ -195,15 +195,17 @@ namespace AirDefense.EditorTools
         private static MissionDefinition CreateMission(ThreatDefinition small, ThreatDefinition wing)
         {
             var m = LoadOrCreate<MissionDefinition>($"{DataDir}/Missions/Mission_M1_Greybox.asset", out bool created);
-            if (!created) return m;
-            m.missionId = "m1_greybox";
-            m.title = "Night Watch (greybox)";
+            // Text is refreshed every build (it describes the controls); balance values are kept once tuned.
+            m.title = "Night Watch";
             m.briefing =
                 "Radar reports small drones approaching the installation.\n\n" +
-                "You are on the ZU-23-2. Drag on the right side of the screen to aim, hold FIRE to shoot. " +
+                "You are on the ZU-23-2. Drag on the left side of the screen to aim, hold FIRE with your right thumb. " +
                 "Brackets mark targets on screen; arrows at the edge point to targets you can't see.\n\n" +
                 "Moving targets need leading: aim at the yellow ring.\n\n" +
                 "Objective: survive three waves with the installation intact.";
+            EditorUtility.SetDirty(m);
+            if (!created) return m;
+            m.missionId = "m1_greybox";
             m.installationHealth = 100f;
             m.seed = 1234;
             Vector2 smallDist = new Vector2(1200f, 1500f);
@@ -336,7 +338,8 @@ namespace AirDefense.EditorTools
 
             Transform yaw, pitch, camAnchor;
             List<Transform> muzzles;
-            if (!TryBuildZu23Model(gunRoot, out yaw, out pitch, out muzzles, out camAnchor))
+            Transform[] barrels = null;
+            if (!TryBuildZu23Model(gunRoot, out yaw, out pitch, out muzzles, out camAnchor, out barrels))
                 BuildGreyboxGun(gunRoot, m, out yaw, out pitch, out muzzles, out camAnchor);
 
             var mount = gunRoot.gameObject.AddComponent<GunMount>();
@@ -384,6 +387,23 @@ namespace AirDefense.EditorTools
             ctrl.input = input;
             ctrl.operatorCamera = cam;
 
+            // Recoil (per-barrel when the model has separate barrels) and muzzle flash.
+            var recoil = gunRoot.gameObject.AddComponent<GunRecoil>();
+            recoil.mount = mount;
+            recoil.barrels = barrels ?? new Transform[0];
+            ctrl.recoil = recoil;
+            var flash = gunRoot.gameObject.AddComponent<MuzzleFlashFX>();
+            flash.mount = mount;
+            flash.viewCamera = cam;
+            var burstMat = NightBaseDresser.AdditiveParticleMaterial("MuzzleFlashBurst", GeneratedTexture("FlashBurst.png", () => MuzzleFlashFX.MakeBurstTexture()));
+            burstMat.SetColor("_BaseColor", new Color(4.2f, 3.2f, 2.2f, 1f));
+            var tongueMat = NightBaseDresser.AdditiveParticleMaterial("MuzzleFlashTongue", GeneratedTexture("FlashTongue.png", () => MuzzleFlashFX.MakeTongueTexture()));
+            tongueMat.SetColor("_BaseColor", new Color(3.6f, 2.5f, 1.5f, 1f));
+            flash.burstMaterial = burstMat;
+            flash.tongueMaterial = tongueMat;
+            flash.smokeMaterial = NightBaseDresser.AlphaParticleMaterial("MuzzleSmoke", NightBaseDresser.SoftDotAsset());
+            ctrl.muzzleFlash = flash;
+
             var director = new GameObject("MissionDirector").AddComponent<MissionDirector>();
             director.transform.SetParent(systems, false);
             director.mission = mission;
@@ -427,6 +447,23 @@ namespace AirDefense.EditorTools
             EditorBuildSettings.scenes = scenes.ToArray();
         }
 
+        /// <summary>Saves a code-generated texture as a PNG asset once (needed so builds include it).</summary>
+        private static Texture2D GeneratedTexture(string file, System.Func<Texture2D> make)
+        {
+            string path = "Assets/_Project/Art/Generated/" + file;
+            if (!File.Exists(path))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(path));
+                File.WriteAllBytes(path, make().EncodeToPNG());
+                AssetDatabase.ImportAsset(path);
+                var ti = (TextureImporter)AssetImporter.GetAtPath(path);
+                ti.alphaIsTransparency = true;
+                ti.wrapMode = TextureWrapMode.Clamp;
+                ti.SaveAndReimport();
+            }
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+        }
+
         // ---------------------------------------------------------- audio + credits
 
         private const string SfxDir = Root + "/Audio/SFX/";
@@ -437,7 +474,12 @@ namespace AirDefense.EditorTools
             AudioClip C(string file) => AssetDatabase.LoadAssetAtPath<AudioClip>(SfxDir + file);
             if (C("zu23_shot_1.wav") == null) return null;
             var b = LoadOrCreate<AudioBank>($"{DataDir}/AudioBank.asset", out _);
-            b.zuShots = new[] { C("zu23_shot_1.wav"), C("zu23_shot_2.wav"), C("zu23_shot_3.wav") };
+            // Layered autocannon rounds (tools/audio/make_sfx.py zu_round); older pitched takes as fallback.
+            b.zuShots = C("zu23_round_1.wav") != null
+                ? new[] { C("zu23_round_1.wav"), C("zu23_round_2.wav"), C("zu23_round_3.wav"), C("zu23_round_4.wav") }
+                : new[] { C("zu23_shot_1.wav"), C("zu23_shot_2.wav"), C("zu23_shot_3.wav") };
+            b.zuBurstTail = C("zu23_tail.wav");
+            b.gunVolume = 0.45f; // every round now plays (not one per pair)
             b.airbursts = new[] { C("airburst_1.wav"), C("airburst_2.wav") };
             b.impactBase = C("impact_base.wav");
             b.boom = C("boom_residue.ogg");
@@ -473,10 +515,11 @@ namespace AirDefense.EditorTools
         /// LuckySkink9661 (Sketchfab), modified. See docs/ASSET_REGISTER.md M-01.
         /// </summary>
         private static bool TryBuildZu23Model(Transform gunRoot, out Transform yaw, out Transform pitch,
-                                              out List<Transform> muzzles, out Transform camAnchor)
+                                              out List<Transform> muzzles, out Transform camAnchor, out Transform[] barrels)
         {
             yaw = pitch = camAnchor = null;
             muzzles = null;
+            barrels = null;
             var asset = AssetDatabase.LoadAssetAtPath<GameObject>(Zu23ModelPath);
             if (asset == null)
             {
@@ -494,6 +537,8 @@ namespace AirDefense.EditorTools
             // so the base may be the model root itself.
             Transform zBase = Find("ZU_Base") ?? model.transform, zYaw = Find("ZU_Yaw"), zPitch = Find("ZU_Pitch");
             Transform mL = Find("Muzzle_L"), mR = Find("Muzzle_R");
+            // Look these up now: the yaw/pitch parts are moved out of the model below.
+            Transform bL = Find("ZU_Barrel_L"), bR = Find("ZU_Barrel_R");
             if (zBase == null || zYaw == null || zPitch == null || mL == null || mR == null)
             {
                 Debug.LogError("[M1SceneBuilder] ZU-23-2 model is missing rig nodes; using greybox gun.");
@@ -519,6 +564,8 @@ namespace AirDefense.EditorTools
             zYaw.SetParent(yaw, true);
             zPitch.SetParent(pitch, true);
             muzzles = new List<Transform> { mL, mR };
+            // Separately recoiling barrels (tools/blender/process_zu23.py splits them), same order as muzzles.
+            if (bL != null && bR != null) barrels = new[] { bL, bR };
 
             // Operator view "B" (tools/blender/preview_operator_view.py): above the sight, behind the breech.
             camAnchor = new GameObject("OperatorCameraAnchor").transform;

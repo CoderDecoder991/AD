@@ -32,6 +32,7 @@ namespace AirDefense.Core
         public int aimAssist = 1;            // AimAssist enum
         public int qualityOverride = -1;     // -1 = auto, else QualityTier
         public float masterVolume = 1f;
+        public bool screenShake = true;
     }
 
     [Serializable]

@@ -19,6 +19,10 @@ namespace AirDefense.Core
         private const int PoolSize = 10;
 
         private AudioSource _gun;
+        private AudioSource _gunB;
+        private int _lastShot = -1;
+        private int _burstRounds;
+        private float _lastRoundTime;
         private AudioSource _ui;
         private AudioSource _siren;
         private AudioSource _ambience;
@@ -28,7 +32,10 @@ namespace AirDefense.Core
 
         private void Awake()
         {
-            _gun = NewSource("Gun");
+            _gun = NewSource("Gun L");
+            _gun.panStereo = -0.12f;
+            _gunB = NewSource("Gun R");
+            _gunB.panStereo = 0.12f;
             _ui = NewSource("Alerts");
             _siren = NewSource("Siren");
             _ambience = NewSource("Ambience");
@@ -82,10 +89,27 @@ namespace AirDefense.Core
 
         private void OnRoundFired(Vector3 _)
         {
-            // Both barrels fire together: one sound per pair keeps voices (and mush) down.
-            if ((_roundCount++ & 1) != 0 || bank.zuShots == null || bank.zuShots.Length == 0) return;
-            _gun.pitch = Random.Range(0.95f, 1.04f);
-            _gun.PlayOneShot(bank.zuShots[Random.Range(0, bank.zuShots.Length)], bank.gunVolume);
+            if (bank.zuShots == null || bank.zuShots.Length == 0) return;
+            // Barrels fire alternately: each round plays, panned slightly to its barrel's side.
+            AudioSource s = (_roundCount++ & 1) == 0 ? _gun : _gunB;
+            s.pitch = Random.Range(0.96f, 1.03f);
+            int pick = Random.Range(0, bank.zuShots.Length);
+            if (pick == _lastShot) pick = (pick + 1) % bank.zuShots.Length; // never the same take twice in a row
+            _lastShot = pick;
+            s.PlayOneShot(bank.zuShots[pick], bank.gunVolume);
+            _burstRounds++;
+            _lastRoundTime = Time.time;
+        }
+
+        private void Update()
+        {
+            // Burst ended: play the rolling echo, stronger after longer bursts.
+            if (_burstRounds > 0 && Time.time - _lastRoundTime > 0.09f)
+            {
+                if (bank.zuBurstTail != null)
+                    _ui.PlayOneShot(bank.zuBurstTail, bank.gunVolume * Mathf.Clamp(_burstRounds / 12f, 0.35f, 1f));
+                _burstRounds = 0;
+            }
         }
 
         private void OnDestroyed(ThreatAgent t)
