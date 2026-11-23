@@ -25,7 +25,11 @@ namespace AirDefense.EditorTools
         [MenuItem("AirDefense/Build/Android Development APK + Run on Device")]
         public static void BuildAndRunAndroidDev() => Build(autoRun: true);
 
-        private static void Build(bool autoRun)
+        /// <summary>Same, but the player connects to the Editor profiler at startup (only with the USB cable in).</summary>
+        [MenuItem("AirDefense/Build/Android Development APK (Autoconnect Profiler)")]
+        public static void BuildAndroidDevProfiler() => Build(autoRun: false, profiler: true);
+
+        private static void Build(bool autoRun, bool profiler = false)
         {
             if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.Android)
                 EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Android, BuildTarget.Android);
@@ -39,7 +43,10 @@ namespace AirDefense.EditorTools
             Directory.CreateDirectory(OutputDir);
             string path = Path.Combine(OutputDir, "AirDefense-dev.apk");
 
-            var options = BuildOptions.Development | BuildOptions.ConnectWithProfiler;
+            // No profiler autoconnect by default: it makes the game wait for the PC at startup (about 10 s
+            // with the USB cable in, and it never starts properly with the cable out). Profile on request.
+            var options = BuildOptions.Development;
+            if (profiler) options |= BuildOptions.ConnectWithProfiler;
             if (autoRun) options |= BuildOptions.AutoRunPlayer;
 
             BuildReport report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
