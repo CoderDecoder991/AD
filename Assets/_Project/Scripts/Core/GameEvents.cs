@@ -14,6 +14,20 @@ namespace AirDefense.Core
         public static event Action<ThreatAgent> ThreatDestroyed;
         public static event Action<ThreatAgent> ThreatImpacted;
         public static event Action<Vector3> RoundFired;
+        /// <summary>A round left a specific weapon (sound per weapon, distance to the listener).</summary>
+        public static event Action<Data.WeaponDefinition, Vector3> WeaponRoundFired;
+        /// <summary>A weapon became the player's manually controlled weapon.</summary>
+        public static event Action<Data.WeaponDefinition> ManualWeaponChanged;
+        /// <summary>A weapon was unlocked with credits.</summary>
+        public static event Action<Data.WeaponDefinition> WeaponUnlocked;
+
+        public static void RaiseWeaponRoundFired(Data.WeaponDefinition w, Vector3 muzzle)
+        {
+            RoundFired?.Invoke(muzzle);
+            WeaponRoundFired?.Invoke(w, muzzle);
+        }
+        public static void RaiseManualWeaponChanged(Data.WeaponDefinition w) => ManualWeaponChanged?.Invoke(w);
+        public static void RaiseWeaponUnlocked(Data.WeaponDefinition w) => WeaponUnlocked?.Invoke(w);
         public static event Action<int, string> WaveStarted;
         public static event Action<MissionResult> MissionEnded;
         /// <summary>bool = the magazine ran empty (vs. a manual early reload).</summary>
@@ -38,6 +52,9 @@ namespace AirDefense.Core
             ThreatDestroyed = null;
             ThreatImpacted = null;
             RoundFired = null;
+            WeaponRoundFired = null;
+            ManualWeaponChanged = null;
+            WeaponUnlocked = null;
             WaveStarted = null;
             MissionEnded = null;
             ReloadStarted = null;

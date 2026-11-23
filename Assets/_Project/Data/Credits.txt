@@ -9,7 +9,7 @@ listing or a linked page. Full asset tracking is in `docs/ASSET_REGISTER.md`.
   - Licence: CC BY 4.0 (creativecommons.org/licenses/by/4.0). Changes: star stencils removed; reduced and rigged.
 - C-RAM: "Centurion C-RAM" by Muhamad Mirza Arrafi (sketchfab.com/nazidefenseforceofficial)
   - Source: sketchfab.com/3d-models/centurion-c-ram-10ea7349c7574ca7a43991eece92c9a9
-  - Licence: CC BY 4.0 (creativecommons.org/licenses/by/4.0). Changes: rescaled, merged. Shown in-game as a fictionalised "C-RAM".
+  - Licence: CC BY 4.0 (creativecommons.org/licenses/by/4.0). Changes: rescaled, merged, split into moving parts (rigged). Shown in-game as a fictionalised "C-RAM".
 - 2K22 Tunguska: "2K22 Tunguska" by usedm (sketchfab.com/usedm)
   - Source: sketchfab.com/3d-models/2k22-tunguska-54ff4d655755473d99eab1ccc7eb6bfc
   - Licence: CC BY 4.0 (creativecommons.org/licenses/by/4.0). Changes: rescaled, merged.

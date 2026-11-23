@@ -91,8 +91,8 @@ M0 Setup ─► M1 ZU greybox ─► M2 Vertical slice (MVP) ─► M3 C-RAM + s
   - ⏳ Remaining for M2: 20-minute soak test, radio voice callouts (S-07), Low-tier cinematic variant.
 
 ### M3 — C-RAM, switching, autonomy
-- C-RAM battery model and behaviour, the unlock flow.
-- Weapon switching with camera transitions. The autonomous controller for both weapons.
+- C-RAM battery model and behaviour, the unlock flow. **Done (M3a, 2026-11-23):** rigged model, researched behaviour and sound, unlock card on the tile and after-action screen.
+- Weapon switching with camera transitions. The autonomous controller for both weapons. **Done (M3a):** 0.4 s camera blend (meets switching ≤ 0.4 s; fire input resumes when the blend ends), `AutonomousWeaponController` for ZU (crew) and C-RAM (radar).
 - Rockets, mortars and loitering munitions. Predicted impact markers.
 - Support priority setting prototype (R-18).
 - **Accept:** switching ≤ 0.4 s, and the radar stays visible. Autonomous engagements are visible on the radar and tiles. In playtests, players use switching on purpose. Autonomous systems alone cannot win a standard mission (C-08).

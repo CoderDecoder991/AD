@@ -310,20 +310,23 @@ namespace AirDefense.EditorTools
 
         /// <summary>
         /// The C-RAM and 2K22 Tunguska shown in full at their firing positions (user request), facing
-        /// north. Display-only until they become playable (C-RAM in M3, Tunguska in M4).
+        /// north. The C-RAM is the rigged model (tools/blender/process_cram.py), made playable by the
+        /// scene builder; the Tunguska is display-only until M4.
         /// Models: CC-BY 4.0 (Sketchfab), scaled by tools/blender/process_display_weapons.py.
         /// </summary>
-        public static void PlaceDisplayWeapons(Transform env, Material concrete, Material sandbag)
+        /// <returns>The placed C-RAM model instance (null if missing).</returns>
+        public static GameObject PlaceDisplayWeapons(Transform env, Material concrete, Material sandbag)
         {
             // On raised earth positions (like the ZU's), so they stand clear of the ZU mound's front edge
             // in the third-person view. pad.y = mound height.
-            Place("CRAM", "C-RAM (display until M3)", new Vector3(-14f, 0f, -8f), 0f, new Vector3(10f, 9f, 10f));
-            Place("Tunguska", "2K22 Tunguska (display until M4)", new Vector3(14f, 0f, -10f), -6f, new Vector3(9f, 7f, 13f));
+            var cram = Place("CRAM/CRAM_Rig", "C-RAM", new Vector3(-14f, 0f, -8f), 0f, new Vector3(10f, 9f, 10f));
+            Place("Tunguska/Tunguska", "2K22 Tunguska (display until M4)", new Vector3(14f, 0f, -10f), -6f, new Vector3(9f, 7f, 13f));
+            return cram;
 
-            void Place(string model, string label, Vector3 pos, float yaw, Vector3 pad)
+            GameObject Place(string model, string label, Vector3 pos, float yaw, Vector3 pad)
             {
-                var asset = AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/_Project/Art/Models/{model}/{model}.gltf");
-                if (asset == null) return;
+                var asset = AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/_Project/Art/Models/{model}.gltf");
+                if (asset == null) return null;
                 var root = new GameObject(label).transform;
                 root.SetParent(env, false);
                 root.position = pos;
@@ -340,6 +343,7 @@ namespace AirDefense.EditorTools
                 Box(root, "Sandbags", pos + new Vector3(0f, pad.y + 0.5f, pad.z / 2f - 0.5f), new Vector3(pad.x - 1f, 0.8f, 0.8f), sandbag, 2f);
                 Prop("concrete_barrier", root, pos + new Vector3(-pad.x / 2f - 1f, 0f, -pad.z / 2f), 90f);
                 Prop("concrete_barrier", root, pos + new Vector3(pad.x / 2f + 1f, 0f, -pad.z / 2f), 90f);
+                return go;
             }
         }
 

@@ -29,8 +29,14 @@ namespace AirDefense.UI
         public TextAsset credits;
         private GameObject _credits;
 
-        private readonly System.Collections.Generic.List<(Data.WeaponDefinition def, Text state, Image bg)> _tiles =
-            new System.Collections.Generic.List<(Data.WeaponDefinition, Text, Image)>();
+        private readonly System.Collections.Generic.List<(Data.WeaponDefinition def, Text state, Image bg, Outline border, Text title)> _tiles =
+            new System.Collections.Generic.List<(Data.WeaponDefinition, Text, Image, Outline, Text)>();
+        private ThreatMarkers _markers;
+        private RadarView _radar;
+        private GameObject _unlockConfirm;
+        private Text _unlockConfirmText;
+        private Data.WeaponDefinition _pendingUnlock;
+        private GameObject _endUnlockBtn;
         private Text _qualityText;
         private Text _shakeText;
         private Text _endRewards;
@@ -74,6 +80,7 @@ namespace AirDefense.UI
             BuildBriefing();
             BuildPause();
             BuildEnd();
+            BuildUnlockConfirm();
             player.InputEnabled = false;
             if (Cinematic.CinematicDirector.Playing)
             {
@@ -85,6 +92,7 @@ namespace AirDefense.UI
             GameEvents.MissionEnded += OnMissionEnded;
             GameEvents.WaveStarted += OnWaveStarted;
             GameEvents.ThreatImpacted += OnImpacted;
+            GameEvents.ManualWeaponChanged += OnManualWeaponChanged;
         }
 
         private void OnDestroy()
@@ -92,6 +100,7 @@ namespace AirDefense.UI
             GameEvents.MissionEnded -= OnMissionEnded;
             GameEvents.WaveStarted -= OnWaveStarted;
             GameEvents.ThreatImpacted -= OnImpacted;
+            GameEvents.ManualWeaponChanged -= OnManualWeaponChanged;
             Time.timeScale = 1f;
         }
 
@@ -139,7 +148,7 @@ namespace AirDefense.UI
             aimPanel.input = input;
             aimPanel.FirstDrag = () => _dragged = true;
 
-            ThreatMarkers.Build(_safe, _canvas, threats, cam, player.mount);
+            _markers = ThreatMarkers.Build(_safe, _canvas, threats, cam, player.mount);
 
             // Crosshair
             // Crosshair: drawn where the gun's bore actually points (third-person camera is tilted, see LateUpdate).
@@ -151,6 +160,7 @@ namespace AirDefense.UI
 
             // Radar (top-left) and installation health below it.
             var radar = RadarView.Build(_safe, threats, player.mount, threats.installationCenter);
+            _radar = radar;
             radar.GetComponent<RectTransform>().Anchor(new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(24f, -24f), new Vector2(280f, 280f));
 
             var hpBg = UiFactory.Image("HealthBar", _safe, UiFactory.Panel, UiFactory.Rounded);
@@ -175,9 +185,10 @@ namespace AirDefense.UI
             var pauseBtn = UiFactory.Button("Pause", _safe, "II", 40, () => SetPaused(true));
             pauseBtn.GetComponent<RectTransform>().Anchor(new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-24f, -24f), new Vector2(100f, 100f));
 
-            // Weapon tiles (bottom-left), from the roster. ZU-23-2 is manual (C-05); others show unlock progress.
+            // Weapon tiles (bottom-left), from the roster (C-04, C-05): tap an unlocked weapon to operate it
+            // (the others defend on their own), or the next locked one to unlock it with credits.
             for (int i = 0; i < roster.weapons.Count; i++)
-                Tile(roster.weapons[i], new Vector2(24f + i * 170f, 24f), selected: roster.weapons[i] == player.mount.definition);
+                Tile(roster.weapons[i], new Vector2(24f + i * 170f, 24f));
             RefreshTiles();
 
             // Ammo / heat (bottom-centre). Tap to reload early.
@@ -210,22 +221,22 @@ namespace AirDefense.UI
             outline.effectDistance = new Vector2(2f, -2f);
         }
 
-        private void Tile(Data.WeaponDefinition def, Vector2 pos, bool selected)
+        private void Tile(Data.WeaponDefinition def, Vector2 pos)
         {
             string name = def.displayName.Replace("2K22 ", "").ToUpperInvariant();
-            var bg = UiFactory.Image("Tile_" + def.weaponId, _safe, selected ? new Color(0.12f, 0.3f, 0.14f, 0.9f) : new Color(0.1f, 0.1f, 0.1f, 0.7f), UiFactory.Rounded);
+            var bg = UiFactory.Image("Tile_" + def.weaponId, _safe, new Color(0.1f, 0.1f, 0.1f, 0.7f), UiFactory.Rounded, raycast: true);
             bg.rectTransform.Anchor(Vector2.zero, Vector2.zero, pos, new Vector2(160f, 120f));
-            if (selected)
-            {
-                var border = bg.gameObject.AddComponent<Outline>();
-                border.effectColor = UiFactory.Accent;
-                border.effectDistance = new Vector2(3f, -3f);
-            }
-            var title = UiFactory.Text("Name", bg.transform, name, 24, TextAnchor.UpperCenter, selected ? Color.white : new Color(1f, 1f, 1f, 0.5f));
+            var button = bg.gameObject.AddComponent<Button>();
+            button.targetGraphic = bg;
+            button.onClick.AddListener(() => OnTileTapped(def));
+            var border = bg.gameObject.AddComponent<Outline>();
+            border.effectColor = UiFactory.Accent;
+            border.effectDistance = new Vector2(3f, -3f);
+            var title = UiFactory.Text("Name", bg.transform, name, 24, TextAnchor.UpperCenter);
             title.rectTransform.Stretch(new Vector2(0f, 0.5f), new Vector2(1f, 0.92f));
-            var st = UiFactory.Text("State", bg.transform, "", 18, TextAnchor.MiddleCenter, selected ? UiFactory.Accent : new Color(1f, 1f, 1f, 0.45f));
+            var st = UiFactory.Text("State", bg.transform, "", 18, TextAnchor.MiddleCenter);
             st.rectTransform.Stretch(new Vector2(0f, 0.05f), new Vector2(1f, 0.5f));
-            _tiles.Add((def, st, bg));
+            _tiles.Add((def, st, bg, border, title));
         }
 
         /// <summary>Tile states from the saved profile (UI_UX_FLOW.md §3).</summary>
@@ -233,16 +244,125 @@ namespace AirDefense.UI
         {
             PlayerProfile p = ProfileStore.Profile;
             Data.WeaponDefinition next = roster.NextUnlock(p);
-            foreach (var (def, state, _) in _tiles)
+            foreach (var (def, state, bg, border, title) in _tiles)
             {
-                if (def == player.mount.definition) state.text = "MANUAL";
-                else if (p.IsUnlocked(def.weaponId)) state.text = "UNLOCKED";
+                bool manual = def == player.mount.definition;
+                bool unlocked = p.IsUnlocked(def.weaponId);
+                bool available = player.StationFor(def) != null;
+                border.enabled = manual;
+                bg.color = manual ? new Color(0.12f, 0.3f, 0.14f, 0.9f)
+                         : unlocked && available ? new Color(0.1f, 0.2f, 0.25f, 0.8f)
+                         : new Color(0.1f, 0.1f, 0.1f, 0.7f);
+                title.color = manual || (unlocked && available) ? Color.white : new Color(1f, 1f, 1f, 0.5f);
+                state.color = manual ? UiFactory.Accent : unlocked && available ? new Color(0.6f, 0.85f, 1f, 0.9f) : new Color(1f, 1f, 1f, 0.45f);
+                if (manual) state.text = "MANUAL";
+                else if (unlocked) state.text = available ? "AUTO\ntap to operate" : "UNLOCKED";
                 else if (def == next)
-                    state.text = p.credits >= def.unlockCost
-                        ? "READY TO\nUNLOCK (M3)"
-                        : $"LOCKED\n{p.credits:N0} / {def.unlockCost:N0} cr";
+                {
+                    bool afford = p.credits >= def.unlockCost;
+                    state.text = afford ? $"TAP TO UNLOCK\n{def.unlockCost:N0} cr" : $"LOCKED\n{p.credits:N0} / {def.unlockCost:N0} cr";
+                    if (afford) state.color = UiFactory.Warn;
+                }
                 else state.text = $"LOCKED\n{def.unlockCost:N0} cr";
             }
+        }
+
+        private void OnTileTapped(Data.WeaponDefinition def)
+        {
+            PlayerProfile p = ProfileStore.Profile;
+            if (p.IsUnlocked(def.weaponId))
+            {
+                WeaponStation st = player.StationFor(def);
+                if (st == null) { Flash($"{def.displayName} joins the base in a later update", 3f); return; }
+                if (player.Select(st)) Banner($"{def.displayName.ToUpperInvariant()} - MANUAL CONTROL", 2f, UiFactory.Accent);
+                return;
+            }
+            if (roster.NextUnlock(p) != def)
+            {
+                Flash($"Unlock {roster.NextUnlock(p)?.displayName} first", 3f);
+                return;
+            }
+            if (p.credits < def.unlockCost)
+            {
+                Flash($"{def.displayName} needs {def.unlockCost - p.credits:N0} more credits - earn them by defending the base", 4f);
+                return;
+            }
+            AskUnlock(def);
+        }
+
+        /// <summary>Confirmation card before spending credits (no accidental purchases).</summary>
+        private void AskUnlock(Data.WeaponDefinition def)
+        {
+            _pendingUnlock = def;
+            _unlockConfirmText.text =
+                $"Unlock {def.displayName} for {def.unlockCost:N0} credits?\n\n" +
+                $"Balance after: {ProfileStore.Profile.credits - def.unlockCost:N0} cr\n\n" +
+                (def.weaponId == "cram"
+                    ? "20 mm six-barrel rotary gun, 75 rounds a second. It tracks threats by radar and engages only those heading into the base. Its rounds self-destruct at about 2 km."
+                    : "");
+            _unlockConfirm.SetActive(true);
+            _prompt.text = "";
+            _unlockConfirm.transform.SetAsLastSibling();
+            if (director.Phase == MissionPhase.Running)
+            {
+                Time.timeScale = 0f;
+                input.FireHeld = false;
+                player.InputEnabled = false;
+            }
+        }
+
+        private void CloseUnlock()
+        {
+            _unlockConfirm.SetActive(false);
+            _pendingUnlock = null;
+            if (director.Phase == MissionPhase.Running && !_pause.activeSelf)
+            {
+                Time.timeScale = 1f;
+                player.InputEnabled = true;
+            }
+        }
+
+        private void ConfirmUnlock()
+        {
+            var def = _pendingUnlock;
+            CloseUnlock();
+            if (def == null || !roster.TryUnlock(ProfileStore.Profile, def)) return;
+            ProfileStore.Save();
+            player.RefreshUnlocks();
+            GameEvents.RaiseWeaponUnlocked(def);
+            RefreshTiles();
+            RefreshEndUnlock();
+            WeaponStation st = player.StationFor(def);
+            if (st != null && director.Phase == MissionPhase.Running)
+            {
+                player.Select(st);
+                Banner($"{def.displayName.ToUpperInvariant()} ONLINE", 2.5f, UiFactory.Accent);
+            }
+            else Flash($"{def.displayName} unlocked - it joins the defence next mission", 4f);
+        }
+
+        private void BuildUnlockConfirm()
+        {
+            _unlockConfirm = Overlay("UnlockConfirm");
+            var card = _unlockConfirm.transform.Find("Card");
+            card.GetComponent<RectTransform>().sizeDelta = new Vector2(1000f, 600f);
+            var t = UiFactory.Text("Title", card, "UNLOCK WEAPON", 48, TextAnchor.UpperCenter, UiFactory.Accent);
+            t.rectTransform.Stretch(new Vector2(0f, 0.82f), new Vector2(1f, 0.95f));
+            _unlockConfirmText = UiFactory.Text("Body", card, "", 30, TextAnchor.UpperCenter);
+            _unlockConfirmText.horizontalOverflow = HorizontalWrapMode.Wrap;
+            _unlockConfirmText.rectTransform.Stretch(new Vector2(0.07f, 0.3f), new Vector2(0.93f, 0.78f));
+            var yes = UiFactory.Button("Confirm", card, "UNLOCK", 40, ConfirmUnlock, new Color(0.15f, 0.45f, 0.2f, 1f));
+            yes.GetComponent<RectTransform>().Anchor(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(-200f, 50f), new Vector2(340f, 110f));
+            var no = UiFactory.Button("Cancel", card, "CANCEL", 40, CloseUnlock);
+            no.GetComponent<RectTransform>().Anchor(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(200f, 50f), new Vector2(340f, 110f));
+            _unlockConfirm.SetActive(false);
+        }
+
+        private void OnManualWeaponChanged(Data.WeaponDefinition def)
+        {
+            if (_markers != null) _markers.gun = player.mount;
+            if (_radar != null) _radar.gun = player.mount;
+            RefreshTiles();
         }
 
         private static Image Bar(Transform parent, Vector2 min, Vector2 max, Color color)
@@ -323,6 +443,13 @@ namespace AirDefense.UI
                 var stress = UiFactory.Button("Stress", card, "DEV: +20 THREATS", 24, () => { SetPaused(false); director.DebugSpawnStress(20); });
                 stress.GetComponent<RectTransform>().Anchor(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 175f), new Vector2(420f, 64f));
                 stress.GetComponentInChildren<Text>().text = "DEV: +20 THREATS (no rewards)";
+                var cr = UiFactory.Button("DevCredits", card, "DEV: +5,000 CREDITS", 24, () =>
+                {
+                    ProfileStore.Profile.credits += 5000;
+                    ProfileStore.Save();
+                    RefreshTiles();
+                });
+                cr.GetComponent<RectTransform>().Anchor(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 245f), new Vector2(420f, 64f));
             }
 
             var creditsBtn = UiFactory.Button("Credits", card, "CREDITS", 26, () => _credits.SetActive(true));
@@ -419,6 +546,13 @@ namespace AirDefense.UI
             _unlockText.rectTransform.Stretch(new Vector2(0.06f, 0.25f), new Vector2(0.94f, 0.30f));
             var retry = UiFactory.Button("Retry", card, "PLAY AGAIN", 40, Restart, new Color(0.15f, 0.45f, 0.2f, 1f));
             retry.GetComponent<RectTransform>().Anchor(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 50f), new Vector2(400f, 110f));
+            _endUnlockBtn = UiFactory.Button("UnlockNow", card, "UNLOCK", 30, () =>
+            {
+                var next = roster.NextUnlock(ProfileStore.Profile);
+                if (next != null && roster.CanUnlock(ProfileStore.Profile, next)) AskUnlock(next);
+            }, new Color(0.55f, 0.4f, 0.1f, 1f)).gameObject;
+            _endUnlockBtn.GetComponent<RectTransform>().Anchor(new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-40f, 60f), new Vector2(300f, 90f));
+            _endUnlockBtn.SetActive(false);
             _end.SetActive(false);
         }
 
@@ -438,7 +572,7 @@ namespace AirDefense.UI
             _healthText.text = $"INSTALLATION {director.Health01 * 100f:0}%";
 
             WeaponState s = player.State;
-            _ammoText.text = $"ZU-23-2   {s.Ammo}/{s.Def.magazineSize}";
+            _ammoText.text = $"{s.Def.displayName.ToUpperInvariant()}   {s.Ammo}/{s.Def.magazineSize}";
             _ammoFill.fillAmount = s.Reloading ? s.ReloadProgress01 : (float)s.Ammo / s.Def.magazineSize;
             _heatFill.fillAmount = s.Heat01;
             _heatFill.color = s.Overheated ? UiFactory.Danger : UiFactory.Warn;
@@ -470,7 +604,7 @@ namespace AirDefense.UI
             if (name == "Radar" || name == "HealthBar") return 0;
             if (name == "Banner") return 1;
             if (name.StartsWith("Tile_") || name == "Ammo") return 2;
-            if (name == "Briefing" || name == "Pause" || name == "AfterAction" || name == "Credits") return -1;
+            if (name == "Briefing" || name == "Pause" || name == "AfterAction" || name == "Credits" || name == "UnlockConfirm") return -1;
             return 3;
         }
 
@@ -518,7 +652,7 @@ namespace AirDefense.UI
             {
                 text = "Hold FIRE to shoot - follow the brackets and edge arrows";
             }
-            else if (!_hintedLead && player.State.RoundsFired >= 60 && director.Destroyed == 0)
+            else if (!_hintedLead && player.ManualRoundsFired >= 60 && director.Destroyed == 0)
             {
                 _hintedLead = true;
                 Flash(GameSettings.Assist == AimAssist.Light
@@ -600,21 +734,31 @@ namespace AirDefense.UI
             sb.Append($"\nTOTAL  +{rw?.Total ?? 0:N0}\nBalance: {ProfileStore.Profile.credits:N0} cr");
             _endRewards.text = sb.ToString();
 
+            RefreshEndUnlock();
+            RefreshTiles();
+        }
+
+        /// <summary>Next-unlock progress on the after-action screen, with an UNLOCK button once affordable.</summary>
+        private void RefreshEndUnlock()
+        {
             var p = ProfileStore.Profile;
             var next = roster.NextUnlock(p);
             if (next != null)
             {
+                bool afford = p.credits >= next.unlockCost;
                 _unlockFill.fillAmount = Mathf.Clamp01((float)p.credits / next.unlockCost);
-                _unlockText.text = p.credits >= next.unlockCost
-                    ? $"{next.displayName}: enough credits - unlocking arrives in M3"
+                _unlockText.text = afford
+                    ? $"{next.displayName}: enough credits ({next.unlockCost:N0} cr)"
                     : $"Next unlock: {next.displayName}  {p.credits:N0} / {next.unlockCost:N0} cr";
+                _endUnlockBtn.SetActive(afford);
+                _endUnlockBtn.GetComponentInChildren<Text>().text = $"UNLOCK {next.displayName.Replace("2K22 ", "").ToUpperInvariant()}";
             }
             else
             {
                 _unlockFill.fillAmount = 1f;
                 _unlockText.text = "All weapon systems unlocked";
+                _endUnlockBtn.SetActive(false);
             }
-            RefreshTiles();
         }
 
         private void SetPaused(bool paused)

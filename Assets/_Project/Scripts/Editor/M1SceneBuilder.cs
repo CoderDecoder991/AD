@@ -46,14 +46,14 @@ namespace AirDefense.EditorTools
             var wing = CreateFixedWing();
             var mission = CreateMission(small, wing);
             var economy = LoadOrCreate<Progression.EconomyConfig>($"{DataDir}/EconomyConfig.asset", out _);
-            var cram = CreateLockedStub("Weapon_CRAM", "cram", "C-RAM", 4000);
+            var cram = CreateCram(CreateLockedStub("Weapon_CRAM", "cram", "C-RAM", 4000));
             var tunguska = CreateLockedStub("Weapon_Tunguska", "tunguska", "2K22 Tunguska", 10000);
             var roster = LoadOrCreate<Progression.WeaponRoster>($"{DataDir}/WeaponRoster.asset", out _);
             roster.weapons = new List<WeaponDefinition> { zu, cram, tunguska }; // tile order + unlock sequence (R-04)
             EditorUtility.SetDirty(roster);
             AssetDatabase.SaveAssets();
 
-            BuildScene(mats, visuals, zu, mission, economy, roster);
+            BuildScene(mats, visuals, zu, cram, mission, economy, roster);
             Debug.Log("[M1SceneBuilder] M1 greybox scene built: " + ScenePath);
         }
 
@@ -248,6 +248,49 @@ namespace AirDefense.EditorTools
         /// Locked weapon used for tiles and unlock progress only. Its gameplay values are
         /// filled in when the weapon is built (C-RAM in M3, Tunguska in M4).
         /// </summary>
+        /// <summary>
+        /// C-RAM (Phalanx-type 20 mm six-barrel rotary gun). FICTIONAL GAME-BALANCE VALUES informed by public
+        /// sources (docs/WEAPON_SYSTEMS.md section 7): 4,500 rounds/min, about 115 deg/s slew, -25..+85 deg
+        /// elevation, 1,550-round magazine, rounds that self-destruct at about 2 km (tracer burnout).
+        /// Filled in once (when the asset still holds the M2 stub defaults), then tunable in the editor.
+        /// </summary>
+        private static WeaponDefinition CreateCram(WeaponDefinition w)
+        {
+            if (w.fireRate >= 50f) return w; // already configured
+            w.traverseSpeed = 115f;
+            w.elevationSpeed = 115f;
+            w.minElevation = -25f;
+            w.maxElevation = 85f;
+            w.fireRate = 75f;          // 4,500 rounds/min
+            w.barrels = 6;
+            w.spinUpTime = 0.3f;
+            w.magazineSize = 1550;
+            w.reloadTime = 15f;        // game value (a real reload takes far longer)
+            w.muzzleVelocity = 1100f;  // 20 mm M940 class
+            w.dragK = 5.5e-4f;         // lighter 20 mm round slows faster than the 23 mm
+            w.tracerBurnTime = 3.5f;   // M940 self-destructs when its tracer burns out
+            w.selfDestructTime = new Vector2(3.3f, 3.8f); // about 2.0-2.2 km down range
+            w.projectileLifetime = 3.8f;
+            w.damagePerRound = 0.6f;
+            w.dispersion = 0.12f;
+            w.tracerEvery = 1;
+            w.flashEvery = 2;
+            w.airburstScale = 0.7f;
+            w.airburstSmokeChance = 0.15f;
+            w.heatPerSecond = 0.07f;   // about 14 s of continuous fire
+            w.coolPerSecond = 0.1f;
+            w.overheatRecoverBelow = 0.3f;
+            w.barrelRecoilDistance = 0f;
+            w.cameraKick = 0.05f;
+            w.cameraShake = 0.08f;
+            w.muzzleClimbPerRound = 0.002f;
+            w.muzzleDriftPerRound = 0.004f;
+            w.minRange = 30f;
+            w.maxRange = 2000f;
+            EditorUtility.SetDirty(w);
+            return w;
+        }
+
         private static WeaponDefinition CreateLockedStub(string file, string id, string name, int cost)
         {
             var w = LoadOrCreate<WeaponDefinition>($"{DataDir}/Weapons/{file}.asset", out bool created);
@@ -273,7 +316,7 @@ namespace AirDefense.EditorTools
 
         // ---------------------------------------------------------------- scene
 
-        private static void BuildScene(Dictionary<string, Material> m, PrototypeVisuals visuals, WeaponDefinition zu, MissionDefinition mission,
+        private static void BuildScene(Dictionary<string, Material> m, PrototypeVisuals visuals, WeaponDefinition zu, WeaponDefinition cramDef, MissionDefinition mission,
                                        Progression.EconomyConfig economy, Progression.WeaponRoster roster)
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -398,7 +441,7 @@ namespace AirDefense.EditorTools
             var beamMat = NightBaseDresser.AdditiveParticleMaterial("SearchlightBeam", Texture2D.whiteTexture);
             beamMat.SetTexture("_BaseMap", null); // vertex alpha drives the fade; cone has no UVs
             NightBaseDresser.DressBase(env, gunRoot, bermHeight, beamMat);
-            NightBaseDresser.PlaceDisplayWeapons(env, m["Concrete"], m["Sandbag"]);
+            GameObject cramModel = NightBaseDresser.PlaceDisplayWeapons(env, m["Concrete"], m["Sandbag"]);
 
             // Systems.
             var systems = new GameObject("Systems").transform;
@@ -422,17 +465,14 @@ namespace AirDefense.EditorTools
             inputGo.transform.SetParent(systems, false);
             var input = inputGo.AddComponent<PlayerInputState>();
 
-            var ctrl = gunRoot.gameObject.AddComponent<ManualWeaponController>();
-            ctrl.mount = mount;
-            ctrl.projectiles = proj;
-            ctrl.input = input;
-            ctrl.operatorCamera = cam;
-
-            // Recoil (per-barrel when the model has separate barrels) and muzzle flash.
+            // ZU-23-2 station: recoil (per-barrel when the model has separate barrels) and muzzle flash.
+            var zuStation = gunRoot.gameObject.AddComponent<WeaponStation>();
+            zuStation.mount = mount;
+            zuStation.projectiles = proj;
             var recoil = gunRoot.gameObject.AddComponent<GunRecoil>();
             recoil.mount = mount;
             recoil.barrels = barrels ?? new Transform[0];
-            ctrl.recoil = recoil;
+            zuStation.recoil = recoil;
             var flash = gunRoot.gameObject.AddComponent<MuzzleFlashFX>();
             flash.mount = mount;
             flash.viewCamera = cam;
@@ -441,7 +481,16 @@ namespace AirDefense.EditorTools
             fireMat.SetColor("_BaseColor", new Color(4.0f, 3.0f, 2.2f, 1f));
             flash.fireMaterial = fireMat;
             flash.smokeMaterial = NightBaseDresser.AlphaParticleMaterial("MuzzleSmoke", NightBaseDresser.SoftDotAsset());
-            ctrl.muzzleFlash = flash;
+            zuStation.muzzleFlash = flash;
+
+            // C-RAM station on its own position, rigged from tools/blender/process_cram.py.
+            WeaponStation cramStation = BuildCramStation(cramModel, cramDef, proj, cam, fireMat, flash.smokeMaterial);
+
+            var ctrl = gunRoot.gameObject.AddComponent<ManualWeaponController>();
+            ctrl.station = zuStation;
+            ctrl.stations = cramStation != null ? new[] { zuStation, cramStation } : new[] { zuStation };
+            ctrl.input = input;
+            ctrl.operatorCamera = cam;
 
             var director = new GameObject("MissionDirector").AddComponent<MissionDirector>();
             director.transform.SetParent(systems, false);
@@ -450,6 +499,36 @@ namespace AirDefense.EditorTools
             director.threats = threatMgr;
             director.projectiles = proj;
             director.player = ctrl;
+
+            // Automatic fire control for whichever weapon the player is not operating (C-05).
+            foreach (var st in ctrl.stations)
+            {
+                var auto = st.gameObject.AddComponent<AutonomousWeaponController>();
+                auto.station = st;
+                auto.threats = threatMgr;
+                auto.director = director;
+                auto.defendedCenter = center;
+                if (st == zuStation)
+                {
+                    // Gun crew: slower to react, less exact, short bursts.
+                    auto.reactionTime = 1.5f;
+                    auto.fireTolerance = 1.2f;
+                    auto.aimError = 0.5f;
+                    auto.burstSeconds = 1.2f;
+                    auto.burstPause = 0.8f;
+                    auto.restPitch = 10f;
+                }
+                else
+                {
+                    // Radar fire control: tracks, decides, and fires long bursts on the intercept point.
+                    auto.reactionTime = 0.8f;
+                    auto.fireTolerance = 0.5f;
+                    auto.aimError = 0f;
+                    auto.burstSeconds = 2.5f;
+                    auto.burstPause = 0.35f;
+                    auto.restPitch = 0f;
+                }
+            }
 
             var bank = CreateAudioBank();
             if (bank != null)
@@ -500,7 +579,7 @@ namespace AirDefense.EditorTools
                 var c = r.transform.Find(child);
                 return c != null ? c : r.transform;
             }
-            cine.cram = FindModel("C-RAM (display until M3)", "CRAM");
+            cine.cram = cramModel != null ? cramModel.transform : null;
             cine.tunguska = FindModel("2K22 Tunguska (display until M4)", "Tunguska");
 
             EditorSceneManager.SaveScene(scene, ScenePath);
@@ -546,6 +625,12 @@ namespace AirDefense.EditorTools
             // User's own Tunguska recording, pitched for the ZU (tools/audio/make_user_burst.py). Null = per-round fallback.
             b.zuFirstShot = C("zu23_first_shot.wav");
             b.zuBurstLoop = C("zu23_burst_loop.wav");
+            // C-RAM: the same real shot laid at 75 rounds/s (tools/audio/make_cram_sound.py).
+            b.cramSpinUp = C("cram_spinup.wav");
+            b.cramBurstLoop = C("cram_loop.wav");
+            b.cramTail = C("cram_tail.wav");
+            b.cramLoopFromRound = 12;
+            b.cramVolume = 0.5f;
             b.gunVolume = 0.45f; // every round now plays (not one per pair)
             b.airbursts = new[] { C("airburst_1.wav"), C("airburst_2.wav") };
             b.selfDestructPops = new[] { C("sd_pop_1.wav"), C("sd_pop_2.wav"), C("sd_pop_3.wav"), C("sd_pop_4.wav") };
@@ -643,6 +728,76 @@ namespace AirDefense.EditorTools
             foreach (var r in model.GetComponentsInChildren<MeshRenderer>(true))
                 r.shadowCastingMode = ShadowCastingMode.On;
             return true;
+        }
+
+        /// <summary>
+        /// Turns the placed C-RAM model into a working station: yaw/pitch pivots at the rig nodes
+        /// (CRAM_Yaw turntable and yoke, CRAM_Pitch radome/gun/drum), spinning barrels, muzzle.
+        /// Model: CC-BY 4.0, Muhamad Mirza Arrafi (Sketchfab), modified (rigged). ASSET_REGISTER.md.
+        /// </summary>
+        private static WeaponStation BuildCramStation(GameObject model, WeaponDefinition def, ProjectileSystem proj, Camera cam,
+                                                      Material fireMat, Material smokeMat)
+        {
+            if (model == null) return null;
+            if (PrefabUtility.IsPartOfPrefabInstance(model))
+                PrefabUtility.UnpackPrefabInstance(model, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
+            Transform Find(string n) => model.GetComponentsInChildren<Transform>(true).FirstOrDefault(t => t.name == n);
+            Transform cYaw = Find("CRAM_Yaw"), cPitch = Find("CRAM_Pitch"), cBarrels = Find("CRAM_Barrels"), cMuzzle = Find("Muzzle");
+            if (cYaw == null || cPitch == null || cMuzzle == null)
+            {
+                Debug.LogError("[M1SceneBuilder] C-RAM model is missing rig nodes (run tools/blender/process_cram.py); display only.");
+                return null;
+            }
+            Transform root = model.transform.parent; // position root (mound, pad, model)
+
+            var yaw = new GameObject("YawPivot").transform;
+            yaw.SetParent(root, false);
+            yaw.position = cYaw.position;
+            yaw.rotation = Quaternion.Euler(0f, model.transform.eulerAngles.y, 0f);
+            var pitch = new GameObject("PitchPivot").transform;
+            pitch.SetParent(yaw, false);
+            pitch.position = cPitch.position;
+            pitch.localRotation = Quaternion.identity;
+            cYaw.SetParent(yaw, true);
+            cPitch.SetParent(pitch, true);
+
+            var camAnchor = new GameObject("CameraAnchor").transform;
+            camAnchor.SetParent(yaw, false);
+            camAnchor.localPosition = new Vector3(0f, 3f, -8f);
+
+            var go = root.gameObject;
+            var mount = go.AddComponent<GunMount>();
+            mount.definition = def;
+            mount.yawPivot = yaw;
+            mount.pitchPivot = pitch;
+            mount.muzzles = new[] { cMuzzle };
+            mount.cameraAnchor = camAnchor;
+
+            var station = go.AddComponent<WeaponStation>();
+            station.mount = mount;
+            station.projectiles = proj;
+            // Over the right shoulder: straight behind, the 4.7 m radar dome hides the gun and its stream.
+            station.cameraDistance = 9f;
+            station.cameraHeight = 3.2f;
+            station.cameraSide = 4.5f;
+            if (cBarrels != null)
+            {
+                var spin = go.AddComponent<BarrelSpin>();
+                spin.barrels = cBarrels;
+                spin.maxRevsPerSecond = def.fireRate / Mathf.Max(1, def.barrels); // 75 / 6 = 12.5 rev/s
+                station.spin = spin;
+            }
+            var flash = go.AddComponent<MuzzleFlashFX>();
+            flash.mount = mount;
+            flash.viewCamera = cam;
+            flash.fireMaterial = fireMat;
+            flash.smokeMaterial = smokeMat;
+            // 20 mm: a smaller flash than the 23 mm; at 75 rounds/s the flashes merge into one flickering flame.
+            flash.coreSize *= 0.8f;
+            flash.lobeSize *= 0.8f;
+            flash.lobeReach *= 0.8f;
+            station.muzzleFlash = flash;
+            return station;
         }
 
         private static void BuildGreyboxGun(Transform gunRoot, Dictionary<string, Material> m, out Transform yaw,

@@ -4,26 +4,28 @@ using UnityEngine;
 namespace AirDefense.Weapons
 {
     /// <summary>
-    /// Player ("manual") control of a gun mount (C-07, R-06): drag to aim, hold
-    /// to fire, tap to reload, zoom toggle. Drives the operator camera.
+    /// Player ("manual") control of one weapon station at a time (C-05, C-07, R-06): drag to aim,
+    /// hold to fire, tap to reload, zoom toggle. Drives the operator camera, which blends across
+    /// when the player switches weapon. Unselected, unlocked stations defend on their own
+    /// (<see cref="AutonomousWeaponController"/>).
     /// </summary>
     [DefaultExecutionOrder(100)] // LateUpdate after GunMount so the camera follows this frame's pose
     public sealed class ManualWeaponController : MonoBehaviour
     {
-        public GunMount mount;
-        public ProjectileSystem projectiles;
+        [Tooltip("The weapon under manual control at start.")]
+        public WeaponStation station;
+        [Tooltip("All weapon stations at the base, in roster order.")]
+        public WeaponStation[] stations;
         public PlayerInputState input;
         public Camera operatorCamera;
-        [Tooltip("Optional: per-barrel recoil animation.")]
-        public GunRecoil recoil;
-        [Tooltip("Optional: muzzle flash, light and smoke.")]
-        public MuzzleFlashFX muzzleFlash;
+        [Tooltip("Seconds for the camera to move to a newly selected weapon.")]
+        public float switchBlendTime = 0.4f; // M3 acceptance: switching <= 0.4 s
+
+        public GunMount mount => station.mount;
 
         [Header("Camera")]
         [Tooltip("Third person: camera behind and above the gun so the whole weapon is visible (user request).")]
         public bool thirdPerson = true;
-        public float thirdPersonDistance = 7.5f;
-        public float thirdPersonHeight = 2.8f;
         [Tooltip("How much the camera orbits down as the gun elevates (0 = stays level, 1 = follows the barrel).")]
         [Range(0f, 1f)] public float pitchFollow = 0.6f;
         [Tooltip("Tilts the view down so the aim point sits in the upper screen and the whole gun is visible below it. The HUD crosshair follows the real aim point.")]
@@ -41,12 +43,21 @@ namespace AirDefense.Weapons
         /// <summary>Where the bore line is at the convergence range: the HUD crosshair is drawn here.</summary>
         public Vector3 AimPoint => mount.pitchPivot.position + mount.BoreDirection * aimConvergence;
 
-        public WeaponState State { get; private set; }
+        public WeaponState State => station.State;
+        /// <summary>Rounds the player fired, across all weapons (accuracy).</summary>
+        public int ManualRoundsFired
+        {
+            get
+            {
+                int n = 0;
+                foreach (var s in stations) if (s != null) n += s.ManualRoundsFired;
+                return n;
+            }
+        }
         public bool Zoomed { get; private set; }
         public bool InputEnabled { get; set; } = true;
 
         private System.Random _rng;
-        private int _roundCounter;
 
         // Camera recoil state (degrees), decaying back to zero.
         private float _kickPitch;
@@ -55,12 +66,59 @@ namespace AirDefense.Weapons
         private const float KickRecovery = 18f;   // 1/s
         private const float ShakeRecovery = 22f;  // 1/s
 
+        // Camera blend when switching weapon.
+        private float _blend = 1f;
+        private Vector3 _blendFromPos;
+        private Quaternion _blendFromRot;
+
         private void Awake()
         {
-            State = new WeaponState(mount.definition);
             _rng = new System.Random(4242);
             operatorCamera.fieldOfView = normalFov;
+            if (stations == null || stations.Length == 0) stations = new[] { station };
         }
+
+        private void Start()
+        {
+            RefreshUnlocks();
+            foreach (var s in stations) if (s != null) s.Manual = s == station;
+            station.Fired += OnFired;
+        }
+
+        /// <summary>Unlocked weapons are crewed; locked ones stand idle at their positions.</summary>
+        public void RefreshUnlocks()
+        {
+            var p = ProfileStore.Profile;
+            foreach (var s in stations)
+                if (s != null) s.Operational = p.IsUnlocked(s.Definition.weaponId);
+        }
+
+        public WeaponStation StationFor(Data.WeaponDefinition def)
+        {
+            foreach (var s in stations) if (s != null && s.Definition == def) return s;
+            return null;
+        }
+
+        /// <summary>Takes manual control of another (unlocked) weapon; the previous one goes autonomous.</summary>
+        public bool Select(WeaponStation next)
+        {
+            if (next == null || next == station || !next.Operational) return false;
+            station.Fired -= OnFired;
+            station.Manual = false;
+            station.TriggerHeld = false;
+            _blendFromPos = operatorCamera.transform.position;
+            _blendFromRot = operatorCamera.transform.rotation;
+            _blend = 0f;
+            station = next;
+            station.Manual = true;
+            station.Fired += OnFired;
+            _kickPitch = _kickYaw = _shake = 0f;
+            Zoomed = false;
+            GameEvents.RaiseManualWeaponChanged(next.Definition);
+            return true;
+        }
+
+        public bool Switching => _blend < 1f;
 
         private void Update()
         {
@@ -84,11 +142,8 @@ namespace AirDefense.Weapons
             input.ReloadRequested = false;
             input.ZoomToggleRequested = false;
 
-            bool trigger = InputEnabled && input.FireHeld;
-            bool wasReloading = State.Reloading;
-            int rounds = State.Tick(dt, trigger);
-            for (int i = 0; i < rounds; i++) FireOne();
-            if (!wasReloading && State.Reloading) GameEvents.RaiseReloadStarted(State.Ammo == 0);
+            // The station fires (WeaponStation, later this frame) while the trigger is held.
+            if (InputEnabled && input.FireHeld && _blend >= 1f) station.TriggerHeld = true;
 
             float targetFov = Zoomed ? zoomFov : normalFov;
             operatorCamera.fieldOfView = Mathf.Lerp(operatorCamera.fieldOfView, targetFov, 1f - Mathf.Exp(-fovLerpSpeed * dt));
@@ -110,7 +165,7 @@ namespace AirDefense.Weapons
                 // Orbit behind the mount: follows traverse fully and elevation partly, never below the mount.
                 Vector3 pivot = mount.yawPivot.position;
                 Quaternion orbit = Quaternion.Euler(-mount.Pitch * pitchFollow, mount.Yaw, 0f);
-                pos = pivot + orbit * new Vector3(0f, thirdPersonHeight, -thirdPersonDistance);
+                pos = pivot + orbit * new Vector3(station.cameraSide, station.cameraHeight, -station.cameraDistance);
                 pos.y = Mathf.Max(pos.y, pivot.y + 1.2f);
                 // Look at the point the bore hits at the convergence range, so the crosshair is the aim.
                 rot = Quaternion.LookRotation(AimPoint - pos, Vector3.up) * Quaternion.Euler(viewTiltDown, 0f, 0f);
@@ -122,32 +177,26 @@ namespace AirDefense.Weapons
                 rot *= Quaternion.Euler(-_kickPitch + sy, _kickYaw + sx, 0f);
                 pos -= rot * Vector3.forward * (_kickPitch * 0.02f); // slight rearward jolt with the kick
             }
+            if (_blend < 1f)
+            {
+                // Smooth move from the previous weapon's view to the new one.
+                _blend = Mathf.Min(1f, _blend + dt / Mathf.Max(0.01f, switchBlendTime));
+                float k = Mathf.SmoothStep(0f, 1f, _blend);
+                pos = Vector3.Lerp(_blendFromPos, pos, k);
+                rot = Quaternion.Slerp(_blendFromRot, rot, k);
+            }
             operatorCamera.transform.SetPositionAndRotation(pos, rot);
         }
 
-        private void FireOne()
+        /// <summary>Recoil felt by the operator: camera kick and shake, and the aim climbs a little (the player corrects).</summary>
+        private void OnFired(int barrel)
         {
             var def = mount.definition;
-            Transform muzzle = mount.NextMuzzle(out int barrel);
-            Vector3 dir = Ballistics.ApplyDispersion(mount.BoreDirection, def.dispersion, _rng);
-            bool tracer = def.tracerEvery > 0 && (_roundCounter++ % def.tracerEvery) == 0;
-            // Realistic round: drag, tracer burn, and self-destruct at a random time in the fuse window.
-            bool sd = def.selfDestructTime.y > 0f;
-            float life = sd ? Mathf.Lerp(def.selfDestructTime.x, def.selfDestructTime.y, (float)_rng.NextDouble()) : def.projectileLifetime;
-            // Tracer compositions vary a little round to round (about +/-6%), so the stream fades out raggedly.
-            float burn = def.tracerBurnTime * (0.94f + 0.12f * (float)_rng.NextDouble());
-            projectiles.Fire(muzzle.position, dir, def.muzzleVelocity, def.dragK, life, tracer ? burn : 0f, sd, def.damagePerRound);
-
-            // Recoil: barrel slides back, camera kicks, aim climbs a little (the player corrects).
-            if (recoil != null) recoil.Kick(barrel);
-            if (muzzleFlash != null) muzzleFlash.Flash(barrel);
             _kickPitch = Mathf.Min(_kickPitch + def.cameraKick, def.cameraKick * 4f);
             _kickYaw += ((float)_rng.NextDouble() - 0.5f) * def.cameraKick * 0.6f;
             _shake = Mathf.Min(_shake + def.cameraShake, def.cameraShake * 3f);
             float drift = ((float)_rng.NextDouble() - 0.5f) * 2f * def.muzzleDriftPerRound;
             mount.AddTarget(drift, def.muzzleClimbPerRound);
-
-            GameEvents.RaiseRoundFired(muzzle.position);
         }
     }
 }

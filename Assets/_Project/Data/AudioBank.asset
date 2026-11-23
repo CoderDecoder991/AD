@@ -20,6 +20,11 @@ MonoBehaviour:
   zuBurstTail: {fileID: 8300000, guid: 1172e9d69dbd3854497044a7663793c5, type: 3}
   zuFirstShot: {fileID: 8300000, guid: 113a944fa9518384b9e1253344a211ff, type: 3}
   zuBurstLoop: {fileID: 8300000, guid: 553d39db907d6314d81781e46dfdd4f2, type: 3}
+  cramSpinUp: {fileID: 8300000, guid: fa458a7d9580ac94bbda5b40b02db071, type: 3}
+  cramBurstLoop: {fileID: 8300000, guid: 60edc99e261d61a4dbcf408b2a0be4f3, type: 3}
+  cramTail: {fileID: 8300000, guid: 568951ef2972cc64ab0485ff38b0351d, type: 3}
+  cramLoopFromRound: 12
+  cramVolume: 0.5
   airbursts:
   - {fileID: 8300000, guid: d316e9af94258ac4888000d7e6704427, type: 3}
   - {fileID: 8300000, guid: 6cd32d07c45ca5d4185602ef4452fdb6, type: 3}

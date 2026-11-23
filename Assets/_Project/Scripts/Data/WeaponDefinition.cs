@@ -44,6 +44,14 @@ namespace AirDefense.Data
         public float dispersion = 0.35f;
         [Tooltip("Every Nth round is drawn as a tracer.")]
         public int tracerEvery = 2;
+        [Tooltip("Rotary (Gatling) guns: seconds for the barrel cluster to spin up to full rate. 0 = fires at full rate at once.")]
+        public float spinUpTime;
+        [Tooltip("Muzzle flash on every Nth round (high-rate guns merge into one continuous flame anyway).")]
+        public int flashEvery = 1;
+        [Tooltip("Size of each round's self-destruct flash and puff (1 = 23 mm HE).")]
+        public float airburstScale = 1f;
+        [Tooltip("Fraction of self-destructs that leave a smoke puff and an audible pop (high-rate guns: keeps the sky readable and cheap).")]
+        [Range(0f, 1f)] public float airburstSmokeChance = 1f;
 
         [Header("Heat")]
         [Tooltip("Heat added per second of continuous fire (0..1 scale).")]

@@ -51,6 +51,9 @@ namespace AirDefense.Weapons
             public bool selfDestruct;
             public int tracerIndex;     // -1 = no tracer
             public float flickerSeed;
+            public float burstScale;    // self-destruct flash/puff size (1 = 23 mm)
+            public bool burstSmoke;     // this round's self-destruct leaves a puff and a pop
+            public bool counted;        // counts toward the player's accuracy (manual fire)
         }
 
         private readonly List<Round> _rounds = new List<Round>(512);
@@ -79,7 +82,11 @@ namespace AirDefense.Weapons
             Fire(origin, direction, speed, 0f, lifetime, tracer ? lifetime : 0f, false, damage);
 
         /// <summary>Realistic round: drag, tracer burn time, and optional self-destruct at <paramref name="life"/>.</summary>
-        public void Fire(Vector3 origin, Vector3 direction, float speed, float dragK, float life, float tracerBurn, bool selfDestruct, float damage)
+        /// <param name="burstScale">Self-destruct flash/puff size (1 = 23 mm HE).</param>
+        /// <param name="burstSmoke">Whether the self-destruct leaves a smoke puff and a pop.</param>
+        /// <param name="counted">Whether a hit counts toward the player's accuracy (false for autonomous fire).</param>
+        public void Fire(Vector3 origin, Vector3 direction, float speed, float dragK, float life, float tracerBurn, bool selfDestruct, float damage,
+                         float burstScale = 1f, bool burstSmoke = true, bool counted = true)
         {
             _rounds.Add(new Round
             {
@@ -92,6 +99,9 @@ namespace AirDefense.Weapons
                 selfDestruct = selfDestruct,
                 tracerIndex = tracerBurn > 0f ? AcquireTracer() : -1,
                 flickerSeed = (float)_rng.NextDouble() * 100f,
+                burstScale = burstScale,
+                burstSmoke = burstSmoke,
+                counted = counted,
             });
         }
 
@@ -117,7 +127,7 @@ namespace AirDefense.Weapons
                 if (!done && r.age >= r.life)
                 {
                     done = true;
-                    if (r.selfDestruct) SelfDestructBurst(r.pos, r.vel, Vector3.Distance(camPos, r.pos) * pxAngle);
+                    if (r.selfDestruct) SelfDestructBurst(r.pos, r.vel, Vector3.Distance(camPos, r.pos) * pxAngle, r.burstScale, r.burstSmoke);
                 }
 
                 if (!done)
@@ -129,7 +139,7 @@ namespace AirDefense.Weapons
                         if (Ballistics.SegmentHitsSphere(p0, r.pos, threat.transform.position, threat.Definition.hitRadius))
                         {
                             threat.ApplyDamage(r.damage);
-                            RoundsHit++;
+                            if (r.counted) RoundsHit++;
                             done = true;
                             break;
                         }
@@ -198,15 +208,15 @@ namespace AirDefense.Weapons
             SelfDestructBurst(pos, Vector3.zero, distanceFromCamera * px);
         }
 
-        private void SelfDestructBurst(Vector3 pos, Vector3 shellVelocity, float metresPerPixel)
+        private void SelfDestructBurst(Vector3 pos, Vector3 shellVelocity, float metresPerPixel, float scale = 1f, bool smoke = true)
         {
-            GameEvents.RaiseRoundSelfDestructed(pos);
+            if (smoke) GameEvents.RaiseRoundSelfDestructed(pos);
             float R() => (float)_rng.NextDouble();
 
             if (_burstFire != null)
             {
                 // Core: compact white-hot flash, kept readable at range (>= ~10 px).
-                float core = Mathf.Max(2.5f + R() * 1.5f, metresPerPixel * (10f + R() * 4f));
+                float core = Mathf.Max((2.5f + R() * 1.5f) * scale, metresPerPixel * (10f + R() * 4f) * Mathf.Sqrt(scale));
                 _burstFire.Emit(new ParticleSystem.EmitParams
                 {
                     position = pos, applyShapeToPosition = false,
@@ -223,10 +233,10 @@ namespace AirDefense.Weapons
                     startColor = new Color(1f, 0.7f, 0.4f, 0.22f),
                 }, 1);
             }
-            if (_burstSmoke != null)
+            if (_burstSmoke != null && smoke)
             {
                 Vector3 along = shellVelocity.sqrMagnitude > 1f ? shellVelocity.normalized : Vector3.forward;
-                float puff = Mathf.Max(3.5f + R() * 1.5f, metresPerPixel * (9f + R() * 4f));
+                float puff = Mathf.Max((3.5f + R() * 1.5f) * scale, metresPerPixel * (9f + R() * 4f) * Mathf.Sqrt(scale));
                 bool dumbbell = R() < 0.45f;
                 int lobes = dumbbell ? 2 : 1;
                 for (int k = 0; k < lobes; k++)

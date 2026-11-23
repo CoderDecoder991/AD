@@ -25,6 +25,9 @@ namespace AirDefense.Weapons
             Overheated ? WeaponStatus.Overheated :
             _firedThisTick ? WeaponStatus.Firing : WeaponStatus.Ready;
 
+        /// <summary>Rotary guns fire once the barrels reach this fraction of full speed.</summary>
+        public const float MinSpinToFire = 0.2f;
+
         private float _reloadRemaining;
         private float _fireAccumulator;
         private bool _firedThisTick;
@@ -45,8 +48,10 @@ namespace AirDefense.Weapons
 
         /// <summary>
         /// Advances time by <paramref name="dt"/>. Returns how many rounds leave the barrel this tick.
+        /// <paramref name="rateScale"/> (0..1) slows the fire rate, for a rotary gun spinning up; below
+        /// <see cref="MinSpinToFire"/> the gun is not yet turning fast enough to fire.
         /// </summary>
-        public int Tick(float dt, bool triggerHeld)
+        public int Tick(float dt, bool triggerHeld, float rateScale = 1f)
         {
             _firedThisTick = false;
 
@@ -60,13 +65,13 @@ namespace AirDefense.Weapons
                 }
             }
 
-            bool canFire = triggerHeld && !Reloading && !Overheated && Ammo > 0;
+            bool canFire = triggerHeld && !Reloading && !Overheated && Ammo > 0 && rateScale >= MinSpinToFire;
             int rounds = 0;
 
             if (canFire)
             {
                 _fireAccumulator += dt;
-                float spr = Def.SecondsPerRound;
+                float spr = Def.SecondsPerRound / Mathf.Max(MinSpinToFire, rateScale);
                 while (_fireAccumulator >= spr && Ammo > 0)
                 {
                     _fireAccumulator -= spr;

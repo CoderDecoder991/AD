@@ -20,12 +20,26 @@ namespace AirDefense.Core
 
         private AudioSource _gun;
         private AudioSource _gunB;
-        private AudioSource _loop;
-        private bool _loopFading;
         private int _lastShot = -1;
-        private int _burstRounds;
-        private float _lastRoundTime;
         private AudioSource _ui;
+
+        /// <summary>
+        /// One weapon's firing sound: an opening clip on the first round (ZU: the first shot; C-RAM: the
+        /// barrels spinning up), then a seamless sustained-fire loop, then a rolling echo when the burst
+        /// ends. Quieter with distance from the camera, so the gun you are not operating sounds distant.
+        /// </summary>
+        private sealed class GunVoice
+        {
+            public AudioClip first, loop, tail;
+            public int loopFrom = 2;
+            public float volume, gap = 0.07f, gain = 1f;
+            public AudioSource oneShot, loopSrc;
+            public int rounds;
+            public float lastRound;
+            public bool fading;
+        }
+        private readonly System.Collections.Generic.Dictionary<string, GunVoice> _voices =
+            new System.Collections.Generic.Dictionary<string, GunVoice>();
 
         // Distant self-destruct pops: scheduled by sound travel time, played from their own voice pool
         // so a long burst's 30-ish pops a second don't steal the gun or alert voices.
@@ -38,7 +52,6 @@ namespace AirDefense.Core
         private AudioSource _ambience;
         private AudioSource[] _pool;
         private int _poolNext;
-        private int _roundCount;
 
         private void Awake()
         {
@@ -46,9 +59,6 @@ namespace AirDefense.Core
             _gun.panStereo = -0.12f;
             _gunB = NewSource("Gun R");
             _gunB.panStereo = 0.12f;
-            _loop = NewSource("Gun Loop");
-            _loop.loop = true;
-            _loop.priority = 0; // never stolen by other sounds
             _ui = NewSource("Alerts");
             _siren = NewSource("Siren");
             _ambience = NewSource("Ambience");
@@ -82,7 +92,7 @@ namespace AirDefense.Core
 
         private void OnEnable()
         {
-            GameEvents.RoundFired += OnRoundFired;
+            GameEvents.WeaponRoundFired += OnRoundFired;
             GameEvents.ThreatDestroyed += OnDestroyed;
             GameEvents.ThreatImpacted += OnImpacted;
             GameEvents.ThreatSpawned += OnSpawned;
@@ -94,7 +104,7 @@ namespace AirDefense.Core
 
         private void OnDisable()
         {
-            GameEvents.RoundFired -= OnRoundFired;
+            GameEvents.WeaponRoundFired -= OnRoundFired;
             GameEvents.ThreatDestroyed -= OnDestroyed;
             GameEvents.ThreatImpacted -= OnImpacted;
             GameEvents.ThreatSpawned -= OnSpawned;
@@ -104,57 +114,90 @@ namespace AirDefense.Core
             GameEvents.RoundSelfDestructed -= OnSelfDestruct;
         }
 
-        private void OnRoundFired(Vector3 _)
+        private GunVoice VoiceFor(Data.WeaponDefinition w)
         {
-            _lastRoundTime = Time.time;
-            if (bank.zuBurstLoop != null)
+            if (_voices.TryGetValue(w.weaponId, out var v)) return v;
+            v = new GunVoice();
+            if (w.weaponId == "cram" && bank.cramBurstLoop != null)
             {
-                // Real recording: opening shot on the first round, then the sustained-fire loop.
-                _burstRounds++;
-                if (_burstRounds == 1)
+                v.first = bank.cramSpinUp;
+                v.loop = bank.cramBurstLoop;
+                v.tail = bank.cramTail != null ? bank.cramTail : bank.zuBurstTail;
+                v.loopFrom = Mathf.Max(2, bank.cramLoopFromRound);
+                v.volume = bank.cramVolume;
+            }
+            else
+            {
+                v.first = bank.zuFirstShot;
+                v.loop = bank.zuBurstLoop;
+                v.tail = bank.zuBurstTail;
+                v.volume = bank.gunVolume;
+            }
+            // A rotary gun's first rounds come slowly while it spins up: allow for that before calling the burst over.
+            v.gap = w.spinUpTime > 0f ? Mathf.Max(0.07f, 1.5f / (w.fireRate * Weapons.WeaponState.MinSpinToFire)) : 0.07f;
+            v.oneShot = NewSource("Gun " + w.weaponId);
+            v.loopSrc = NewSource("Gun Loop " + w.weaponId);
+            v.loopSrc.loop = true;
+            v.loopSrc.priority = 0; // never stolen by other sounds
+            _voices[w.weaponId] = v;
+            return v;
+        }
+
+        private void OnRoundFired(Data.WeaponDefinition w, Vector3 muzzle)
+        {
+            GunVoice v = VoiceFor(w);
+            float d = listener ? Vector3.Distance(listener.position, muzzle) : 0f;
+            v.gain = Mathf.Clamp(14f / Mathf.Max(14f, d), 0.12f, 1f); // the operated gun is ~8-10 m from the camera
+            v.lastRound = Time.time;
+            if (v.loop != null)
+            {
+                // Real recording: opening clip on the first round, then the sustained-fire loop.
+                v.rounds++;
+                if (v.rounds == 1 && v.first != null)
                 {
-                    _gun.pitch = Random.Range(0.98f, 1.02f);
-                    _gun.PlayOneShot(bank.zuFirstShot, bank.gunVolume);
+                    v.oneShot.pitch = Random.Range(0.98f, 1.02f);
+                    v.oneShot.PlayOneShot(v.first, v.volume * v.gain);
                 }
-                else if (_burstRounds == 2)
+                else if (v.rounds == v.loopFrom)
                 {
-                    _loop.clip = bank.zuBurstLoop;
-                    _loop.volume = bank.gunVolume;
-                    _loop.pitch = 1f;
-                    _loop.time = 0f;
-                    _loop.Play();
-                    _loopFading = false;
+                    v.loopSrc.clip = v.loop;
+                    v.loopSrc.pitch = 1f;
+                    v.loopSrc.time = 0f;
+                    v.loopSrc.Play();
+                    v.fading = false;
                 }
+                if (!v.fading) v.loopSrc.volume = v.volume * v.gain;
                 return;
             }
 
             if (bank.zuShots == null || bank.zuShots.Length == 0) return;
             // Barrels fire alternately: each round plays, panned slightly to its barrel's side.
-            AudioSource s = (_roundCount++ & 1) == 0 ? _gun : _gunB;
+            AudioSource s = (v.rounds++ & 1) == 0 ? _gun : _gunB;
             s.pitch = Random.Range(0.96f, 1.03f);
             int pick = Random.Range(0, bank.zuShots.Length);
             if (pick == _lastShot) pick = (pick + 1) % bank.zuShots.Length; // never the same take twice in a row
             _lastShot = pick;
-            s.PlayOneShot(bank.zuShots[pick], bank.gunVolume);
-            _burstRounds++;
-            _lastRoundTime = Time.time;
+            s.PlayOneShot(bank.zuShots[pick], v.volume * v.gain);
         }
 
         private void Update()
         {
             PlayDuePops();
-            // Burst ended: stop the loop with a quick fade and play the rolling echo (stronger after longer bursts).
-            if (_burstRounds > 0 && Time.time - _lastRoundTime > 0.07f)
+            foreach (var v in _voices.Values)
             {
-                if (_loop.isPlaying) _loopFading = true;
-                if (bank.zuBurstTail != null)
-                    _ui.PlayOneShot(bank.zuBurstTail, bank.gunVolume * Mathf.Clamp(_burstRounds / 12f, 0.35f, 1f));
-                _burstRounds = 0;
-            }
-            if (_loopFading)
-            {
-                _loop.volume -= bank.gunVolume * Time.deltaTime / 0.04f; // 40 ms release
-                if (_loop.volume <= 0.001f) { _loop.Stop(); _loopFading = false; }
+                // Burst ended: stop the loop with a quick fade and play the rolling echo (stronger after longer bursts).
+                if (v.rounds > 0 && Time.time - v.lastRound > v.gap)
+                {
+                    if (v.loopSrc.isPlaying) v.fading = true;
+                    if (v.tail != null)
+                        _ui.PlayOneShot(v.tail, v.volume * v.gain * Mathf.Clamp(v.rounds / 12f, 0.35f, 1f));
+                    v.rounds = 0;
+                }
+                if (v.fading)
+                {
+                    v.loopSrc.volume -= v.volume * Time.deltaTime / 0.04f; // 40 ms release
+                    if (v.loopSrc.volume <= 0.001f) { v.loopSrc.Stop(); v.fading = false; }
+                }
             }
         }
 
@@ -224,7 +267,7 @@ namespace AirDefense.Core
 
         private void OnMissionEnded(MissionResult _)
         {
-            _loop.Stop();
+            foreach (var v in _voices.Values) v.loopSrc.Stop();
             _siren.Stop();
             _ambience.volume = bank.ambienceVolume * 0.5f;
         }

@@ -15,21 +15,34 @@ MonoBehaviour:
   weaponId: cram
   displayName: C-RAM
   unlockCost: 4000
-  traverseSpeed: 60
-  elevationSpeed: 45
-  minElevation: -5
+  traverseSpeed: 115
+  elevationSpeed: 115
+  minElevation: -25
   maxElevation: 85
-  fireRate: 30
-  barrels: 2
-  magazineSize: 100
-  reloadTime: 4
-  muzzleVelocity: 900
-  projectileLifetime: 2.2
-  damagePerRound: 1
-  dispersion: 0.35
-  tracerEvery: 2
-  heatPerSecond: 0.2
-  coolPerSecond: 0.15
+  fireRate: 75
+  barrels: 6
+  magazineSize: 1550
+  reloadTime: 15
+  muzzleVelocity: 1100
+  projectileLifetime: 3.8
+  dragK: 0.00055
+  tracerBurnTime: 3.5
+  selfDestructTime: {x: 3.3, y: 3.8}
+  damagePerRound: 0.6
+  dispersion: 0.12
+  tracerEvery: 1
+  spinUpTime: 0.3
+  flashEvery: 2
+  airburstScale: 0.7
+  airburstSmokeChance: 0.15
+  heatPerSecond: 0.07
+  coolPerSecond: 0.1
   overheatRecoverBelow: 0.3
-  minRange: 50
-  maxRange: 1500
+  barrelRecoilDistance: 0
+  barrelReturnTime: 0.09
+  cameraKick: 0.05
+  cameraShake: 0.08
+  muzzleClimbPerRound: 0.002
+  muzzleDriftPerRound: 0.004
+  minRange: 30
+  maxRange: 2000

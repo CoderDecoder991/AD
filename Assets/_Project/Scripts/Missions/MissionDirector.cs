@@ -134,7 +134,7 @@ namespace AirDefense.Missions
                 success = success,
                 duration = Elapsed,
                 healthRemaining01 = Health01,
-                roundsFired = player.State.RoundsFired,
+                roundsFired = player.ManualRoundsFired, // the player's own fire (autonomous rounds are not counted in accuracy)
                 roundsHit = projectiles.RoundsHit,
                 threatsDestroyed = Destroyed,
                 threatsLeaked = Leaked,

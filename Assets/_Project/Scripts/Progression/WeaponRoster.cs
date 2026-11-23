@@ -25,5 +25,14 @@ namespace AirDefense.Progression
         /// <summary>Sequential rule: only the next weapon in order can be unlocked.</summary>
         public bool CanUnlock(PlayerProfile p, WeaponDefinition w) =>
             w != null && NextUnlock(p) == w && p.credits >= w.unlockCost;
+
+        /// <summary>Spends the credits and unlocks <paramref name="w"/> if allowed. The caller saves the profile.</summary>
+        public bool TryUnlock(PlayerProfile p, WeaponDefinition w)
+        {
+            if (!CanUnlock(p, w)) return false;
+            p.credits -= w.unlockCost;
+            p.unlockedWeapons.Add(w.weaponId);
+            return true;
+        }
     }
 }

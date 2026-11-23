@@ -16,6 +16,16 @@ namespace AirDefense.Core
         public AudioClip zuFirstShot;
         [Tooltip("Real recording: seamless sustained-fire loop. When set, it replaces per-round shots.")]
         public AudioClip zuBurstLoop;
+        [Header("C-RAM (20 mm six-barrel rotary gun, 75 rounds/s)")]
+        [Tooltip("Barrels spinning up and the first rounds as the rate climbs (tools/audio/make_cram_sound.py).")]
+        public AudioClip cramSpinUp;
+        [Tooltip("Seamless sustained-fire loop: the 75 Hz 'brrrt' of a Gatling at full rate.")]
+        public AudioClip cramBurstLoop;
+        public AudioClip cramTail;
+        [Tooltip("Round number at which the loop takes over from the spin-up clip.")]
+        public int cramLoopFromRound = 12;
+        public float cramVolume = 0.5f;
+
         public AudioClip[] airbursts;
         [Tooltip("Distant pops of rounds self-destructing (played distance / 343 m/s after the flash).")]
         public AudioClip[] selfDestructPops;

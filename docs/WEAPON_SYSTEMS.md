@@ -55,7 +55,7 @@ A short-range, high-rate manual gun. It teaches leading targets, burst disciplin
 
 ## 2. C-RAM — fictionalised battery
 
-**Status:** Locked. 1st unlock (R-04). **Identity: Recommended R-13, needs approval (O-06).**
+**Status:** Playable (M3a, 2026-11-23). 1st unlock, 4,000 credits (R-04). Model: the supplied Sketchfab C-RAM (C-22), rigged by `tools/blender/process_cram.py`. Research and the values used: section 7.
 
 ### Design choice (brief §2 note)
 C-RAM is a capability, not one specific weapon. We present a **clearly labelled, fictionalised C-RAM battery**, made up of:
@@ -72,28 +72,31 @@ The gun mount is visually inspired by real land-based counter-rocket gun systems
 ### Gameplay role
 Very-short-range point defence. Excellent against rockets, artillery and mortars (RAM) and small drones. Poor against anything fast at distance.
 
-### Manual behaviour
-- The player designates a target by tapping it on the radar or on screen. The fire-control computer tracks it and assists aim. The player fine-adjusts and holds fire.
-- Very high fire rate and a small magazine, so it's about timing: fire too early and you run dry.
+### Manual behaviour (as built, M3a)
+- Tap the C-RAM tile to take it over; the camera blends across (0.4 s) to a third-person view behind the mount. The ZU-23-2 goes autonomous.
+- Drag to aim (115°/s mount), hold FIRE: the barrels spin up for 0.3 s, then 75 rounds/s. Very light kick, 1,550 rounds, 15 s reload, overheats after about 14 s of continuous fire.
+- Later (M3b): tap-to-designate with radar-assisted tracking, once rockets and mortars exist.
 
-### Autonomous behaviour
-- Automatically engages RAM threats and small drones that enter its range band.
-- Prioritises the threat predicted to land closest to the base.
-- After the magazine is empty, a long reload. This is the key weakness the player must cover.
+### Autonomous behaviour (as built, M3a: `AutonomousWeaponController`)
+- Sense, decide, intercept: tracks threats from 1.25 × max range; engages only threats whose ground track passes within 140 m of the base centre (`ThreatensArea`), most urgent first (time to reach the base), with hysteresis on the current target.
+- Opens fire after a 0.8 s track (radar track + engagement decision), when the bore is within 0.5° of the drag-and-gravity intercept point and the target is in 30–2,000 m. Bursts of 2.5 s with 0.35 s pauses to re-assess.
+- Returns to rest and tops up the magazine when idle. After the magazine is empty, a long reload: the weakness the player must cover.
+- The ZU-23-2 uses the same controller when not selected, as a gun crew: 1.5 s reaction, 0.5° wandering aim error, 1.2° fire tolerance, 1.2 s bursts.
+- Accuracy and the accuracy bonus count only the player's own rounds.
 
-### Balance fields (starting values)
-| Field | Manual | Autonomous |
+### Balance fields (as built; FICTIONAL GAME-BALANCE VALUES informed by section 7)
+| Field | Value | Real-world reference (section 7) |
 |---|---|---|
-| Eligible targets | Rocket, mortar, small drone, loitering munition | Rocket, mortar, small drone |
-| Effective range (min–max) | 30–1200 | 30–1000 |
-| Traverse speed (°/s) | 120 | 120 |
-| Fire rate (rounds/s) | 60 | 60 |
-| Magazine (rounds) | 600 | 600 |
-| Reload time (s) | 12.0 | 15.0 |
-| Damage per round | 0.4 | 0.4 |
-| Dispersion (°) | 0.4 (with assist) | 0.6 |
-| Reaction delay (s) | — | 0.6 |
-| Simultaneous targets | 1 | 1 (fast re-target 0.5 s) |
+| Fire rate | 75 rounds/s, 0.3 s spin-up | 4,500 rounds/min |
+| Traverse / elevation speed | 115°/s / 115°/s | ~115°/s (Block 1B) |
+| Elevation | −25° to +85° | −25° to +85° |
+| Magazine / reload | 1,550 rounds / 15 s | 1,550 rounds / manual reload (much longer) |
+| Muzzle velocity / drag | 1,100 m/s / k = 5.5e-4 per m | 20 mm M940 class |
+| Self-destruct | 3.3–3.8 s (≈2.0–2.2 km), tracer burns 3.5 s | M940 self-destructs at tracer burnout, ~2 km |
+| Effective range | 30–2,000 m | 1.5–2 km |
+| Damage per round / dispersion | 0.6 / 0.12° | — |
+| Tracers | every round, 1/60 s streaks merge into a near-continuous stream | night footage |
+| Self-destruct look | 0.7 × size flash, smoke puff and pop on 15% of rounds | many small bursts at the end of the stream |
 
 ---
 
@@ -160,5 +163,19 @@ What real 23 mm fire looks like, and how the game reproduces it:
 | Distant bursts are heard after they are seen (sound 343 m/s; air absorbs high frequencies over km) | Physics (not found in sources; inferred) | `sd_pop_1-4.wav` (dull pop + thump + ground echo), played distance/343 s after the flash (≈7–10 s at 2.5–3.5 km), quieter and lower with distance |
 | Tracers and bursts are bright light sources visible through night haze | Perception | `AirDefense/AdditiveGlowNoFog` (flashes, tracers) and `AirDefense/AlphaSmokeNoFog` (burst puffs) ignore scene fog; scenery keeps it |
 | A tracer is a point of light; the "streak" is exposure/perception | [Tracer ammunition](https://www.wikipedia.org/wiki/Tracer_round); forum discussions | Trail = distance flown in 1/60 s, a typical camera shutter (≈16 m dashes with gaps; shrinks as it slows), bright head, fading tail, flicker |
-| Bright point lights stay visible far away | Perception of point sources | Minimum on-screen width (3.5 px) so far tracers remain glowing points |
+| Bright point lights stay visible far away | Perception of point sources | Minimum on-screen width (8 px) so far tracers remain glowing points |
 | Bright tracers ignite almost at the muzzle | [Tracer ammunition](https://www.wikipedia.org/wiki/Tracer_round) | Visible from 3 m past the muzzle |
+
+## 7. C-RAM research notes (2026-11-23)
+
+Public sources on the land-based Phalanx (C-RAM / Centurion) and how the game uses them. In-game the weapon is called "C-RAM"; no manufacturer names (R-13). Values in the game are fictional balance values informed by these figures.
+
+| Real behaviour | Source | In game |
+|---|---|---|
+| 20 mm six-barrel rotary cannon, 4,500 rounds/min (some sources: 3,000 or 4,500 selectable) | [Centurion C-RAM (Wikipedia)](https://en.wikipedia.org/wiki/Centurion_C-RAM), [DigDB](https://en.digdb.net/phalanx-ciwscenturion-c-ram/), [Army Recognition](https://www.armyrecognition.com/military-products/army/air-defense-systems/self-propelled-anti-aircraft-guns/centurion-c-ram-united-states-uk) | 75 rounds/s; barrels spin at 12.5 rev/s (`BarrelSpin`); 0.3 s spin-up before full rate |
+| 1,550-round magazine; bursts of up to ~1,000 rounds | [Brickmania](https://www.brickmania.com/centurion-c-ram-land-based-phalanx-weapon-system/) (weak source), [Nihonkoku Shoukan wiki](https://nihonkoku-shoukan.fandom.com/wiki/Phalanx_CIWS) | 1,550 rounds; 2.5 s autonomous bursts (~190 rounds) |
+| Effective 1.5–2 km. M940 MPT-SD rounds self-destruct (tracer burnout) at ~2–2.3 km to limit collateral damage | [Centurion C-RAM (Wikipedia)](https://en.wikipedia.org/wiki/Centurion_C-RAM), [DigDB](https://en.digdb.net/phalanx-ciwscenturion-c-ram/), [Navy Matters](https://navy-matters.blogspot.com/2021/06/c-ram.html) | Max range 2,000 m; rounds self-destruct at 3.3–3.8 s (≈2.0–2.2 km) |
+| Mount: elevation −25° to +85°, slew about 115°/s (Block 1B); Block 0 86°/s elevation, 100°/s train | [NavWeaps](https://www.navweaps.com/Weapons/WNUS_Phalanx.php), [Phalanx CIWS (Wikipedia)](https://en.wikipedia.org/wiki/Phalanx_CIWS), [seaforces](https://www.seaforces.org/wpnsys/SURFACE/Mk-15-close-in-weapon-system.htm), [babriet](https://babriet.tripod.com/navy/stat/statphalanx.htm) | 115°/s both axes; −25°..+85° |
+| Sense → warn → intercept. Radars (LCMR, Firefinder) track the incoming round and predict its impact point; a loud alarm and an "INCOMING, INCOMING" voice warn troops to take cover; only rounds threatening the protected area are engaged; hundreds of rounds detonate the threat in the air. Reported intercept rate 60–70% | [DVIDS](https://www.dvidshub.net/news/22272/c-ram-system-protects-deployed-service-members), [Interesting Engineering](https://interestingengineering.com/innovation/c-ram-an-advanced-automated-point-defense-gatling-gun), [C-RAM (Wikipedia)](https://en.wikipedia.org/wiki/C-RAM), [CENTCOM Citadel](https://centcomcitadel.com/en_GB/articles/ssc/features/2023/10/06/feature-02), [afghanwarnews](https://afghanwarnews.info/equipment/C-RAM.htm), [EDN](https://ednnews-12.com/airdefense/how-c-ram-defenses-stop-rockets-artillery-and-mortars/) | `AutonomousWeaponController`: tracks, engages only threats heading into the base (`ThreatensArea`), most urgent first. The "INCOMING" warning and impact prediction arrive with rockets and mortars (M3b) |
+| Distinctive sound: individual reports merge into a ripping "brrrt" whose pitch is the fire rate | Physics (75 rounds/s = 75 Hz fundamental) | `tools/audio/make_cram_sound.py` lays the user's real recorded shot (S-01), pitched ×1.22 for 20 mm, at exactly 75/s; spin-up clip with the rate ramp; outdoor-reverb tail. Check: loop spectrum peaks at 75, 150, 225 Hz |
+
