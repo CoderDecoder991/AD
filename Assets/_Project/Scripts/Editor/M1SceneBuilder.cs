@@ -109,7 +109,8 @@ namespace AirDefense.EditorTools
             v.impactFlash = m["Impact"];
             v.navLight = m["NavLight"];
             // Tracer: glowing streak texture, additive, HDR red-orange (Soviet-style red tracer) so bloom makes it glow.
-            var tracerMat = NightBaseDresser.GlowMaterial("TracerStreak", GeneratedTexture("TracerStreak.png", () => MuzzleFlashFX.MakeTracerTexture()), new Color(3.4f, 1.3f, 0.55f, 1f));
+            // Capsule texture (round ends, even body): the shape a tracer leaves on a camera frame.
+            var tracerMat = NightBaseDresser.GlowMaterial("TracerStreak", GeneratedTexture("TracerCapsule.png", () => MuzzleFlashFX.MakeTracerTexture()), new Color(2.6f, 1.5f, 0.8f, 1f));
             v.tracer = tracerMat;
             v.cube = Resources.GetBuiltinResource<Mesh>("Cube.fbx");
             v.sphere = Resources.GetBuiltinResource<Mesh>("Sphere.fbx");
@@ -256,12 +257,14 @@ namespace AirDefense.EditorTools
         /// </summary>
         private static WeaponDefinition CreateCram(WeaponDefinition w)
         {
-            if (w.tracerWidthScale == 1f)
+            if (w.tracerWidthScale != 1f || w.tracerLengthScale != 1.25f)
             {
                 // M3a look pass (user: "more the tracer stream and the muzzle flash"): night video shows one
                 // bright continuous stream and a flame that never goes out while the gun fires.
-                w.tracerWidthScale = 1.7f;
-                w.tracerLengthScale = 1.6f;   // 18 m streaks x 1.6 > 15 m round spacing: a continuous stream
+                // Thin bright line of individual rounds, not a solid bar: the burning element is ~2 cm, the
+                // glow around it a few cm more. 18 m streaks x 1.25 just overlap the 15 m round spacing.
+                w.tracerWidthScale = 1f;
+                w.tracerLengthScale = 1.25f;
                 w.flashEvery = 1;
                 EditorUtility.SetDirty(w);
             }
