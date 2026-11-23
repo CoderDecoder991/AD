@@ -1,0 +1,74 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9cca31f1c77569648b0cf1ad2b75c33d, type: 3}
+  m_Name: Mission_M1_Greybox
+  m_EditorClassIdentifier: AirDefense.Runtime::AirDefense.Data.MissionDefinition
+  missionId: m1_greybox
+  title: Night Watch (greybox)
+  briefing: 'Radar reports small drones approaching the installation.
+
+
+    You are on the ZU-23-2. Drag on the right side of the screen to aim, hold FIRE to shoot. Brackets mark targets on screen; arrows at the edge point to targets you can''t see.
+
+
+    Moving targets need leading: aim at the yellow ring.
+
+
+    Objective: survive three waves with the installation intact.'
+  installationHealth: 100
+  seed: 1234
+  waves:
+  - label: Wave 1
+    preDelay: 3
+    groups:
+    - threat: {fileID: 11400000, guid: 21573d9928831d647aa35768b10c3be3, type: 2}
+      count: 3
+      startDelay: 0
+      interval: 4
+      bearingRange: {x: -20, y: 20}
+      distanceRange: {x: 1200, y: 1500}
+  - label: Wave 2
+    preDelay: 5
+    groups:
+    - threat: {fileID: 11400000, guid: 21573d9928831d647aa35768b10c3be3, type: 2}
+      count: 4
+      startDelay: 0
+      interval: 3
+      bearingRange: {x: 300, y: 350}
+      distanceRange: {x: 1200, y: 1500}
+    - threat: {fileID: 11400000, guid: 5d82b8ce593097e48b6d649da86f997a, type: 2}
+      count: 2
+      startDelay: 6
+      interval: 6
+      bearingRange: {x: 30, y: 60}
+      distanceRange: {x: 2200, y: 2600}
+  - label: Wave 3
+    preDelay: 6
+    groups:
+    - threat: {fileID: 11400000, guid: 21573d9928831d647aa35768b10c3be3, type: 2}
+      count: 5
+      startDelay: 0
+      interval: 2
+      bearingRange: {x: 0, y: 90}
+      distanceRange: {x: 1200, y: 1500}
+    - threat: {fileID: 11400000, guid: 5d82b8ce593097e48b6d649da86f997a, type: 2}
+      count: 3
+      startDelay: 4
+      interval: 5
+      bearingRange: {x: 270, y: 330}
+      distanceRange: {x: 2200, y: 2600}
+    - threat: {fileID: 11400000, guid: 21573d9928831d647aa35768b10c3be3, type: 2}
+      count: 3
+      startDelay: 10
+      interval: 3
+      bearingRange: {x: 120, y: 160}
+      distanceRange: {x: 1200, y: 1500}

@@ -1,0 +1,35 @@
+// Custom copy of Unity's default settingsTemplate.gradle (Unity 6000.6).
+// Only change: a local "seed" Maven repository is checked first.
+// tools/Build-Android.ps1 fills <project>/.gradle-seed with dependency files that
+// Gradle failed to download (fetched with resumable curl and SHA-1 verified).
+// If the folder does not exist, the build behaves exactly like Unity's default.
+// settingsDir = <project>/Library/Bee/Android/Prj/IL2CPP/Gradle -> 6 levels up = <project>
+
+pluginManagement {
+    repositories {
+        def seed = new File(settingsDir, "../../../../../../.gradle-seed").canonicalFile
+        if (seed.isDirectory()) { maven { name = "localSeed"; url = seed.toURI() } }
+        **ARTIFACTORYREPOSITORY**
+        gradlePluginPortal()
+        google()
+        mavenCentral()
+    }
+}
+
+include ':launcher'
+include ':unityLibrary'
+**INCLUDES**
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+    repositories {
+        def seed = new File(settingsDir, "../../../../../../.gradle-seed").canonicalFile
+        if (seed.isDirectory()) { maven { name = "localSeed"; url = seed.toURI() } }
+        **ARTIFACTORYREPOSITORY**
+        google()
+        mavenCentral()
+        flatDir {
+            dirs "${project(':unityLibrary').projectDir}/libs"
+        }
+    }
+}

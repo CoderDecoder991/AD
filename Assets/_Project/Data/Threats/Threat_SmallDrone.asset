@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7383d9b7864341a47a052e029d815740, type: 3}
+  m_Name: Threat_SmallDrone
+  m_EditorClassIdentifier: AirDefense.Runtime::AirDefense.Data.ThreatDefinition
+  threatId: small_drone
+  displayName: Small drone
+  threatClass: 0
+  movement: 0
+  speed: 28
+  cruiseAltitude: 50
+  diveDistance: 120
+  weaveAmplitude: 30
+  weaveFrequency: 0.12
+  health: 3
+  hitRadius: 3
+  impactDamage: 8
+  interceptCredits: 10
+  radarColor: {r: 1, g: 0.8, b: 0.25, a: 1}
+  visualScale: 1.6
