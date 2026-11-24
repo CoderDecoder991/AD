@@ -19,6 +19,7 @@ M0 Setup ─► M1 ZU greybox ─► M2 Vertical slice (MVP) ─► M3 C-RAM + s
 | M1 | ZU-23-2 greybox prototype | Prove aiming and shooting feel good on touch | M0 |
 | M2 | Vertical slice (MVP) | One polished base, the full ZU loop, credits, locked tiles, cinematic animatic | M1 + art packs chosen |
 | M3 | C-RAM + switching + autonomy | The core three-system mechanic, with two systems | M2, O-06 |
+| VS | Visual vertical slice (brief v1.1 §21; inserted 2026-11-24, awaiting approval O-14) | Production visual standard on one base: presentation, HUD system, emplacement, lighting, terrain, hero ZU, one threat + destruction, performance pass. M3a is done; M3b follows the slice | M3a, `VISUAL_ACCEPTANCE_CHECKLIST.md` |
 | M4 | 2K22 Tunguska | All three systems working together | M3 |
 | M5 | Content and modes | More missions, Survival, Multi-Threat, more threats, multi-asset base | M4 |
 | M6 | Upgrades, economy, Daily Challenge | Balanced long-term progression | M5 |

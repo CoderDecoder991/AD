@@ -80,6 +80,12 @@ Single source of truth for project decisions. Every other document refers back h
 | O-11 | Game title, branding and Android package name? | Store listing, UI. The package name is permanent after the first Play upload. | Working title "AirDefense"; package `com.placeholder.airdefense` (dev only). |
 | ~~O-13~~ | **Closed 2026-11-23 (C-22): used at user direction.** Use the supplied Sketchfab C-RAM model (CC-BY, "Centurion C-RAM")? The required credit must show the author's Sketchfab profile link, and that profile's username contains the word "nazi". | That link would appear in the credits and store listing. | Hold. Decide before M3. Alternatives: another CC-BY or bought model, or commission one. |
 | O-12 | Stay on Unity 6.6 ("Supported") or move to an LTS release before M2? | LTS gets longer bug-fix support. | Stay on 6.6 for M0–M1. |
+| O-14 | Approve the visual vertical slice (VS-1…VS-8, `SCREENSHOT_VISUAL_AUDIT.md` §5) before M3b? | Brief v1.1 makes the visual slice the next production milestone. | Do the slice first, then M3b. |
+| O-15 | HUD font (U-03)? | Typography of the whole HUD. | Barlow Semi Condensed (SIL OFL), TextMeshPro SDF. |
+| O-16 | ZU-23-2 hero asset route (VS-6)? | Hero quality vs cost. | In-house material pass first; buy or commission only if still short of the standard (cost approved by user). |
+| O-17 | Threat models (M-06–M-11): licensed store models, CC-BY, or in-house simple shapes? | Threat readability; budget. | CC-BY/CC0 where good enough, licensed for the hero threats, approved per item. |
+| O-18 | Bake lighting (lightmaps + probes) for the static base? | Night quality on mobile; adds a bake step to scene builds (slow on the GT 730 PC). | Yes, from VS-4. |
+| P-01 / P-02 | Minimum supported device and the Balanced-tier reference device? | Tier targets and test coverage (`ANDROID_PERFORMANCE_BUDGET.md`). | A 2021–2022 mid-range phone (Snapdragon 7-series class, 6 GB) as minimum; to be confirmed. |
 
 ## 4. Assumptions
 

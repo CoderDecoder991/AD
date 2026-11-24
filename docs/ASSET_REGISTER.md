@@ -96,3 +96,34 @@ CC-BY-4.0 allows commercial use if we credit each model. This needs: the title, 
 - No real military unit insignia, national flags or manufacturer logos (R-13, R-14).
 - Fonts: confirm embedding in apps is allowed.
 - Commissioned work: a written agreement transferring or licensing rights for commercial game use.
+
+## 10. Visual production status (2026-11-24, after the screenshot audit)
+
+Classification required by brief v1.1 §20: **existing and usable**, **needs improvement**, **new asset required**, **temporary placeholder**, **external artist/tool required**. Owner: "Claude (in-house)" = produced in this repo with Blender scripts / Unity code; "User decision" = purchase or commission needs approval. Details: `SCREENSHOT_VISUAL_AUDIT.md`, `WEAPON_ASSET_BRIEFS.md`, `ENVIRONMENT_ART_BRIEF.md`, `VFX_AND_ANIMATION_SPEC.md`.
+
+| ID | Asset | Production status | Owner | Licence | Implementation status |
+|---|---|---|---|---|---|
+| M-01 | ZU-23-2 | Needs improvement (materials, grounding); external artist/tool required if the material pass is not enough | Claude (in-house) → User decision | CC-BY 4.0 | Integrated, rigged |
+| M-02 | C-RAM | Needs improvement (materials, cables, pad, LODs) | Claude (in-house) | CC-BY 4.0 | Integrated, playable |
+| M-04 | 2K22 Tunguska | Needs improvement (rig for M4, materials) | Claude (in-house) | CC-BY 4.0 | Display only |
+| M-06/07 | Quadcopter, fixed-wing drone | **Temporary placeholder** (greybox primitives) → new asset required | User decision (licensed store / CC-BY) | — | Placeholder in game |
+| M-08–M-11 | Loitering munition, rocket/mortar, cruise missile, aircraft | New asset required | Claude (simple shapes) / User decision | — | Not started |
+| M-12, A-01 | Soldiers and animations | External artist/tool required (licensed pack) | User decision | — | Not started |
+| E-01 | Base buildings (box + facade detail) | Needs improvement (silhouettes, roofs, bunker) | Claude (in-house) | CC0 props + project | Integrated |
+| E-01b | Emplacements: ZU pit, weapon pads, HESCO/T-walls, revetments | New asset required (currently textured boxes = temporary placeholder) | Claude (in-house Blender) | Project-original | Placeholder |
+| E-01c | Radar tower + rotating antenna, command bunker, gate/guard post | New asset required | Claude (in-house Blender) | Project-original | Placeholder (mast + bar) |
+| E-02 | Terrain (near relief, ridges, far mountains) | New asset required (flat plane + mountains in sky image today) | Claude (in-house Blender) | Project-original + CC0 textures | Placeholder |
+| E-02b | Desert scatter (bushes, boulders, rocks, logs) | Existing and usable; needs LODs/impostors | Claude (in-house) | CC0 | Integrated |
+| E-03 | Night sky | Needs improvement (horizon mountains in the HDRI conflict with real terrain) | Claude (in-house) | CC0 | Integrated |
+| E-04 | Lighting props (floodlights, searchlight heads, street lamps, wall lamps) | Existing and usable | — | CC0 | Integrated |
+| E-05 | Radar/command interior (cinematic) | External artist/tool required, or a simplified in-house set | User decision | — | Not started |
+| V-03 | Threat destruction effects | **Temporary placeholder** (unlit sphere) → new asset required (Blender-rendered flipbooks) | Claude (in-house) | Project-original | Placeholder |
+| V-06 | Searchlight beams | Needs improvement (flat additive cone → beam shader) | Claude (in-house) | Project-original | Integrated |
+| V-01/02 | Muzzle flash, tracers, airbursts | Existing and usable (user-approved); minor improvements | Claude (in-house) | Project-original | Integrated |
+| U-01/02 | Weapon tile icons, radar symbols | New asset required | Claude (in-house SVG) | Project-original | Not started |
+| U-03 | HUD font | New asset required — proposal Barlow Semi Condensed (OFL) | User decision (font choice) | SIL OFL (proposed) | Built-in Arial-like font today |
+
+### Assets added in the visual-clarity pass (2026-11-24), all CC0 from Poly Haven (polyhaven.com), processed by `tools/blender/process_props.py`
+
+Textures (2K): `dry_ground_01` (outside ground), `worn_asphalt` (roads), `painted_plaster_wall` (command, barracks), `worn_corrugated_iron` (hangar), `container_side` (depot), `gravel_concrete` (apron).
+Models: `exterior_aircon_unit`, `rollershutter_door`, `rollershutter_window_01`, `modular_airduct_rectangular_01`, `security_camera_01`, `utility_box_01`, `propane_tank`, `old_tyre`, `plastic_crate_01`, `cardboard_box_01`, `covered_car`, `namaqualand_boulder_02`, `namaqualand_boulder_04`, `rock_07`, `wild_rooibos_bush`, `dead_tree_trunk`, `industrial_wall_lamp`, `metal_trash_can`, `cement_bag`, `concrete_road_barrier_02`, `street_lamp_01`. Downloaded but not used: `modular_electricity_poles` (too heavy), `shrub_01`.

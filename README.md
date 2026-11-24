@@ -42,7 +42,15 @@ A realistic 3D air-defence command game for Android. You start on a ZU-23-2, ear
 | [CINEMATIC_OPENING.md](docs/CINEMATIC_OPENING.md) | Shot list, audio cues, transition, fallback |
 | [ASSET_REGISTER.md](docs/ASSET_REGISTER.md) | Every required asset, with status and licence |
 | [MILESTONES_AND_TEST_PLAN.md](docs/MILESTONES_AND_TEST_PLAN.md) | M0–M8, acceptance criteria, device and performance tests |
-| [source/](docs/source/) | The original handoff brief |
+| [SCREENSHOT_VISUAL_AUDIT.md](docs/SCREENSHOT_VISUAL_AUDIT.md) | Visual audit of the prototype and the production upgrade plan (VS-1…VS-8) |
+| [VISUAL_PRODUCTION_STANDARD.md](docs/VISUAL_PRODUCTION_STANDARD.md) | Art direction, materials, lighting, detail bands, tiers |
+| [HUD_UI_SPECIFICATION.md](docs/HUD_UI_SPECIFICATION.md) | HUD design system: type, colour tokens, radar, tiles, controls |
+| [ENVIRONMENT_ART_BRIEF.md](docs/ENVIRONMENT_ART_BRIEF.md) | Base layout, asset groups, lighting plan |
+| [WEAPON_ASSET_BRIEFS.md](docs/WEAPON_ASSET_BRIEFS.md) | ZU-23-2, C-RAM, Tunguska and threat asset requirements |
+| [VFX_AND_ANIMATION_SPEC.md](docs/VFX_AND_ANIMATION_SPEC.md) | Effects and animation, current vs target |
+| [ANDROID_PERFORMANCE_BUDGET.md](docs/ANDROID_PERFORMANCE_BUDGET.md) | Devices, measured baseline, tiers, budgets, profiling |
+| [VISUAL_ACCEPTANCE_CHECKLIST.md](docs/VISUAL_ACCEPTANCE_CHECKLIST.md) | Pass/fail checks for the vertical slice |
+| [source/](docs/source/) | The handoff briefs (v1.0 and v1.1) |
 
 ## Ground rules
 - All weapon and threat numbers are fictional game-balance values.
