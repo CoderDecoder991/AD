@@ -306,6 +306,39 @@ namespace AirDefense.EditorTools
             for (int i = 0; i < 4; i++) Prop("barrier_b", root, new Vector3(i % 2 == 0 ? -3f : 3f, 0f, -48f + i * 3f), 90f);
         }
 
+        // ------------------------------------------------------------------ crew
+
+        /// <summary>
+        /// Posed soldier figures (user-supplied CC-BY models, tools/blender/process_characters.py): crew beside the
+        /// ZU-23-2 and the C-RAM, guards at the command entrance, the gate checkpoint, the hangar and the depot.
+        /// Static until animations exist. Placed clear of each weapon's gameplay camera line.
+        /// </summary>
+        public static void Crew(Transform env, Vector3 zuPos, Vector3 cramPadTop)
+        {
+            var root = new GameObject("Crew (CC-BY, user-supplied)").transform;
+            root.SetParent(env, false);
+            void Soldier(string model, Vector3 pos, float yaw)
+            {
+                var asset = AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/_Project/Art/Models/Characters/{model}/{model}.gltf");
+                if (asset == null) return;
+                var go = (GameObject)PrefabUtility.InstantiatePrefab(asset, root);
+                go.transform.SetPositionAndRotation(pos, Quaternion.Euler(0f, yaw, 0f));
+                foreach (var r in go.GetComponentsInChildren<MeshRenderer>(true)) r.shadowCastingMode = ShadowCastingMode.On;
+                GameObjectUtility.SetStaticEditorFlags(go, StaticEditorFlags.BatchingStatic);
+            }
+            // ZU-23-2 crew on the platform, beside the gun (loader by the ammo boxes, commander on the right).
+            Soldier("soldier_gear", zuPos + new Vector3(-2.3f, 0.2f, -2.2f), 25f);
+            Soldier("soldier_gear", zuPos + new Vector3(2.5f, 0.2f, -2.6f), -20f);
+            // C-RAM operator at the electronics cabinet side (left rear, away from the over-the-shoulder camera).
+            Soldier("soldier_gear", cramPadTop + new Vector3(-3.6f, 0f, -2.8f), 35f);
+            // Guards: command entrance, gate checkpoint, hangar, depot yard.
+            Soldier("soldier_a", new Vector3(-2.3f, 0.04f, 15.4f), 180f);
+            Soldier("soldier_b", new Vector3(2.4f, 0.04f, 15.3f), 172f);
+            Soldier("soldier_a", new Vector3(6.2f, 0.04f, -44f), -95f);
+            Soldier("soldier_b", new Vector3(-29f, 0.04f, -24.6f), 160f);
+            Soldier("soldier_a", new Vector3(27.6f, 0.04f, -11.5f), 125f);
+        }
+
         // ---------------------------------------------------------- terrain scatter
 
         /// <summary>Desert scatter outside the fence (and a few bushes inside): boulders, rocks, bushes, dead logs.</summary>

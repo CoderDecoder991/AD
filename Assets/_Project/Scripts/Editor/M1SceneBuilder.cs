@@ -369,6 +369,7 @@ namespace AirDefense.EditorTools
             foreach (float z in new[] { -42f, -22f, -2f }) BaseDetailer.StreetLamp(env, new Vector3(-5.2f, 0f, z), 90f);
             foreach (float x in new[] { -52f, -32f, 26f, 52f }) BaseDetailer.StreetLamp(env, new Vector3(x, 0f, 11f), 180f); // -32: clear of the C-RAM view
             BaseDetailer.Clutter(env);
+            BaseDetailer.Crew(env, new Vector3(0f, 14f, -60f), new Vector3(-14f, 9.2f, -8f)); // ZU pit, C-RAM pad top
             BaseDetailer.TerrainScatter(env, 90f);
 
             for (int i = 0; i < 3; i++)
