@@ -1,0 +1,107 @@
+fileFormatVersion: 2
+guid: 317a943d5974f75489ef51e1d33efa0d
+ScriptedImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 2
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+  script: {fileID: 11500000, guid: 715df9372183c47e389bb6e19fbc3b52, type: 3}
+  editorImportSettings:
+    generateSecondaryUVSet: 0
+  importSettings:
+    nodeNameMethod: 1
+    animationMethod: 2
+    generateMipMaps: 1
+    texturesReadable: 0
+    defaultMinFilterMode: 9729
+    defaultMagFilterMode: 9729
+    anisotropicFilterLevel: 1
+  instantiationSettings:
+    mask: -1
+    layer: 0
+    skinUpdateWhenOffscreen: 1
+    lightIntensityFactor: 1
+    sceneObjectCreation: 2
+  assetDependencies:
+  - type: 0
+    originalUri: Assets\_Project\Art\Models\Characters\soldier_gear\soldier_gear.bin
+    assetPath: Assets\_Project\Art\Models\Characters\soldier_gear\soldier_gear.bin
+  - type: 1
+    originalUri: Assets\_Project\Art\Models\Characters\soldier_gear\Image_1.png
+    assetPath: Assets\_Project\Art\Models\Characters\soldier_gear\Image_1.png
+  - type: 1
+    originalUri: Assets\_Project\Art\Models\Characters\soldier_gear\Image_0.png
+    assetPath: Assets\_Project\Art\Models\Characters\soldier_gear\Image_0.png
+  - type: 1
+    originalUri: Assets\_Project\Art\Models\Characters\soldier_gear\Image_4.png
+    assetPath: Assets\_Project\Art\Models\Characters\soldier_gear\Image_4.png
+  - type: 1
+    originalUri: Assets\_Project\Art\Models\Characters\soldier_gear\Image_3.png
+    assetPath: Assets\_Project\Art\Models\Characters\soldier_gear\Image_3.png
+  - type: 1
+    originalUri: Assets\_Project\Art\Models\Characters\soldier_gear\Image_2.png
+    assetPath: Assets\_Project\Art\Models\Characters\soldier_gear\Image_2.png
+  - type: 1
+    originalUri: Assets\_Project\Art\Models\Characters\soldier_gear\Image_7.jpg
+    assetPath: Assets\_Project\Art\Models\Characters\soldier_gear\Image_7.jpg
+  - type: 1
+    originalUri: Assets\_Project\Art\Models\Characters\soldier_gear\Image_6.png
+    assetPath: Assets\_Project\Art\Models\Characters\soldier_gear\Image_6.png
+  - type: 1
+    originalUri: Assets\_Project\Art\Models\Characters\soldier_gear\Image_5.jpg
+    assetPath: Assets\_Project\Art\Models\Characters\soldier_gear\Image_5.jpg
+  - type: 1
+    originalUri: Assets\_Project\Art\Models\Characters\soldier_gear\Image_10.png
+    assetPath: Assets\_Project\Art\Models\Characters\soldier_gear\Image_10.png
+  - type: 1
+    originalUri: Assets\_Project\Art\Models\Characters\soldier_gear\Image_9.png
+    assetPath: Assets\_Project\Art\Models\Characters\soldier_gear\Image_9.png
+  - type: 1
+    originalUri: Assets\_Project\Art\Models\Characters\soldier_gear\Image_8.jpg
+    assetPath: Assets\_Project\Art\Models\Characters\soldier_gear\Image_8.jpg
+  - type: 1
+    originalUri: Assets\_Project\Art\Models\Characters\soldier_gear\Image_13.png
+    assetPath: Assets\_Project\Art\Models\Characters\soldier_gear\Image_13.png
+  - type: 1
+    originalUri: Assets\_Project\Art\Models\Characters\soldier_gear\Image_12.png
+    assetPath: Assets\_Project\Art\Models\Characters\soldier_gear\Image_12.png
+  - type: 1
+    originalUri: Assets\_Project\Art\Models\Characters\soldier_gear\Image_11.png
+    assetPath: Assets\_Project\Art\Models\Characters\soldier_gear\Image_11.png
+  - type: 1
+    originalUri: Assets\_Project\Art\Models\Characters\soldier_gear\Image_16.png
+    assetPath: Assets\_Project\Art\Models\Characters\soldier_gear\Image_16.png
+  - type: 1
+    originalUri: Assets\_Project\Art\Models\Characters\soldier_gear\Image_15.png
+    assetPath: Assets\_Project\Art\Models\Characters\soldier_gear\Image_15.png
+  - type: 1
+    originalUri: Assets\_Project\Art\Models\Characters\soldier_gear\Image_14.png
+    assetPath: Assets\_Project\Art\Models\Characters\soldier_gear\Image_14.png
+  - type: 1
+    originalUri: Assets\_Project\Art\Models\Characters\soldier_gear\Image_19.png
+    assetPath: Assets\_Project\Art\Models\Characters\soldier_gear\Image_19.png
+  - type: 1
+    originalUri: Assets\_Project\Art\Models\Characters\soldier_gear\Image_18.png
+    assetPath: Assets\_Project\Art\Models\Characters\soldier_gear\Image_18.png
+  - type: 1
+    originalUri: Assets\_Project\Art\Models\Characters\soldier_gear\Image_17.jpg
+    assetPath: Assets\_Project\Art\Models\Characters\soldier_gear\Image_17.jpg
+  - type: 1
+    originalUri: Assets\_Project\Art\Models\Characters\soldier_gear\Image_22.png
+    assetPath: Assets\_Project\Art\Models\Characters\soldier_gear\Image_22.png
+  - type: 1
+    originalUri: Assets\_Project\Art\Models\Characters\soldier_gear\Image_21.png
+    assetPath: Assets\_Project\Art\Models\Characters\soldier_gear\Image_21.png
+  - type: 1
+    originalUri: Assets\_Project\Art\Models\Characters\soldier_gear\Image_20.jpg
+    assetPath: Assets\_Project\Art\Models\Characters\soldier_gear\Image_20.jpg
+  - type: 1
+    originalUri: Assets\_Project\Art\Models\Characters\soldier_gear\Image_23.jpg
+    assetPath: Assets\_Project\Art\Models\Characters\soldier_gear\Image_23.jpg
+  reportItems:
+  - type: 2
+    code: 20
+    messages:
+    - KHR_materials_specular
