@@ -29,7 +29,7 @@ namespace AirDefense.Weapons
         [Tooltip("How much the camera orbits down as the gun elevates (0 = stays level, 1 = follows the barrel).")]
         [Range(0f, 1f)] public float pitchFollow = 0.6f;
         [Tooltip("Tilts the view down so the aim point sits in the upper screen and the whole gun is visible below it. The HUD crosshair follows the real aim point.")]
-        public float viewTiltDown = 10f;
+        public float viewTiltDown = 13f; // VS-3: horizon higher in frame, more of the base visible
         [Tooltip("Crosshair and bore line meet at this distance (metres), so aim is exact at typical ranges.")]
         public float aimConvergence = 800f;
 

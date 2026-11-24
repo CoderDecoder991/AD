@@ -364,9 +364,9 @@ namespace AirDefense.EditorTools
             Building("Depot", new Vector3(38, 0, -8), new Vector3(20, 7, 20), BaseDetailer.Style.Depot, pal.container);
 
             // Roads: north-south from the gun berm to Command, east-west between the barracks and the hangar/depot.
-            BaseDetailer.Road(env, "Road_NS", new Vector3(0, 0, -50), new Vector3(0, 0, 15), 8f, pal, 0.06f);
+            BaseDetailer.Road(env, "Road_NS", new Vector3(0, 0, -38), new Vector3(0, 0, 15), 8f, pal, 0.06f); // from the berm foot
             BaseDetailer.Road(env, "Road_EW", new Vector3(-62, 0, 7), new Vector3(62, 0, 7), 6f, pal, 0.07f);
-            foreach (float z in new[] { -42f, -22f, -2f }) BaseDetailer.StreetLamp(env, new Vector3(-5.2f, 0f, z), 90f);
+            foreach (float z in new[] { -34f, -18f, -2f }) BaseDetailer.StreetLamp(env, new Vector3(-5.2f, 0f, z), 90f);
             foreach (float x in new[] { -52f, -32f, 26f, 52f }) BaseDetailer.StreetLamp(env, new Vector3(x, 0f, 11f), 180f); // -32: clear of the C-RAM view
             BaseDetailer.Clutter(env);
             BaseDetailer.Crew(env, new Vector3(0f, 14f, -60f), new Vector3(-14f, 9.2f, -8f)); // ZU pit, C-RAM pad top
@@ -423,18 +423,37 @@ namespace AirDefense.EditorTools
             // Gun position south of the buildings on a 14 m earth berm, so the
             // operator sees over the rooftops (buildings are 6-12 m tall). Facing north.
             const float bermHeight = 14f;
-            NightBaseDresser.Box(env, "GunBerm", new Vector3(0, bermHeight / 2f, -60), new Vector3(16, bermHeight, 16), m["Sandbag"], 3f)
-                .GetComponent<MeshRenderer>().shadowCastingMode = ShadowCastingMode.On;
             var gunRoot = new GameObject("ZU-23-2").transform;
             gunRoot.position = new Vector3(0, bermHeight, -60);
-            Prim(gunRoot, "Platform", PrimitiveType.Cylinder, new Vector3(0, 0.1f, 0), new Vector3(7, 0.1f, 7), m["Concrete"], false);
-            for (int i = 0; i < 20; i++)
+            // VS-3: round earth mound with sloped sides and a sandbag revetment (tools/blender/make_zu_emplacement.py):
+            // low on the threat side so the base stays visible, higher on the flanks, access gap at the rear.
+            var bermAsset = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Art/Models/Emplacement/zu_berm.gltf");
+            var revAsset = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Art/Models/Emplacement/zu_revetment.gltf");
+            if (bermAsset != null && revAsset != null)
             {
-                float a = i / 20f * Mathf.PI * 2f;
-                if (Mathf.Abs(Mathf.DeltaAngle(a * Mathf.Rad2Deg, 0f)) < 25f) continue; // gap at the front for low shots
-                var bag = Prim(gunRoot, "Sandbag", PrimitiveType.Cube, new Vector3(Mathf.Sin(a) * 4.4f, 0.45f, Mathf.Cos(a) * 4.4f), new Vector3(1.4f, 0.9f, 0.7f), m["Sandbag"], false);
-                bag.transform.rotation = Quaternion.Euler(0, a * Mathf.Rad2Deg, 0);
+                foreach (var asset in new[] { bermAsset, revAsset })
+                {
+                    var go = (GameObject)PrefabUtility.InstantiatePrefab(asset, env);
+                    go.transform.position = gunRoot.position;
+                    foreach (var r in go.GetComponentsInChildren<MeshRenderer>(true)) r.shadowCastingMode = ShadowCastingMode.On;
+                    GameObjectUtility.SetStaticEditorFlags(go, StaticEditorFlags.BatchingStatic);
+                }
             }
+            else
+            {
+                NightBaseDresser.Box(env, "GunBerm", new Vector3(0, bermHeight / 2f, -60), new Vector3(16, bermHeight, 16), m["Sandbag"], 3f)
+                    .GetComponent<MeshRenderer>().shadowCastingMode = ShadowCastingMode.On;
+                for (int i = 0; i < 20; i++)
+                {
+                    float a = i / 20f * Mathf.PI * 2f;
+                    if (Mathf.Abs(Mathf.DeltaAngle(a * Mathf.Rad2Deg, 0f)) < 25f) continue;
+                    var bag = Prim(gunRoot, "Sandbag", PrimitiveType.Cube, new Vector3(Mathf.Sin(a) * 4.4f, 0.45f, Mathf.Cos(a) * 4.4f), new Vector3(1.4f, 0.9f, 0.7f), m["Sandbag"], false);
+                    bag.transform.rotation = Quaternion.Euler(0, a * Mathf.Rad2Deg, 0);
+                }
+            }
+            // Concrete gun pad on the gravel pit floor.
+            var pad = Prim(gunRoot, "Platform", PrimitiveType.Cylinder, new Vector3(0, 0.06f, 0), new Vector3(5.2f, 0.06f, 5.2f), m["Concrete"], false);
+            pad.GetComponent<MeshRenderer>().receiveShadows = true;
 
             Transform yaw, pitch, camAnchor;
             List<Transform> muzzles;
@@ -489,6 +508,10 @@ namespace AirDefense.EditorTools
 
             // ZU-23-2 station: recoil (per-barrel when the model has separate barrels) and muzzle flash.
             var zuStation = gunRoot.gameObject.AddComponent<WeaponStation>();
+            // VS-3 framing: a little higher and further back so the weapon, the low front revetment and the base
+            // below the horizon are all readable (VISUAL_PRODUCTION_STANDARD.md §7).
+            zuStation.cameraDistance = 7.8f;
+            zuStation.cameraHeight = 3.2f;
             zuStation.mount = mount;
             zuStation.projectiles = proj;
             var recoil = gunRoot.gameObject.AddComponent<GunRecoil>();

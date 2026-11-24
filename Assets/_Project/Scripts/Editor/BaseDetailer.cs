@@ -303,7 +303,7 @@ namespace AirDefense.EditorTools
             Prop("trash_can", root, new Vector3(-28f, 0f, 22.9f), 180f);
             Prop("trash_can", root, new Vector3(52f, 0f, 22.9f), 180f);
             // Concrete barriers (second type) staggered at the base entrance road.
-            for (int i = 0; i < 4; i++) Prop("barrier_b", root, new Vector3(i % 2 == 0 ? -3f : 3f, 0f, -48f + i * 3f), 90f);
+            for (int i = 0; i < 4; i++) Prop("barrier_b", root, new Vector3(i % 2 == 0 ? -3f : 3f, 0f, -36f + i * 3f), 90f);
         }
 
         // ------------------------------------------------------------------ crew
@@ -334,7 +334,7 @@ namespace AirDefense.EditorTools
             // Guards: command entrance, gate checkpoint, hangar, depot yard.
             Soldier("soldier_a", new Vector3(-2.3f, 0.04f, 15.4f), 180f);
             Soldier("soldier_b", new Vector3(2.4f, 0.04f, 15.3f), 172f);
-            Soldier("soldier_a", new Vector3(6.2f, 0.04f, -44f), -95f);
+            Soldier("soldier_a", new Vector3(6.2f, 0.04f, -32f), -95f);
             Soldier("soldier_b", new Vector3(-29f, 0.04f, -24.6f), 160f);
             Soldier("soldier_a", new Vector3(27.6f, 0.04f, -11.5f), 125f);
         }

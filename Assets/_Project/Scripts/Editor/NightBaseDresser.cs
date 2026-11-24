@@ -270,12 +270,12 @@ namespace AirDefense.EditorTools
                 var fl = Prop("floodlight_pair", root, g + new Vector3(6.6f * sx, 0f, -7.2f), sx * 35f + 180f, 1f);
                 var spot = new GameObject("FloodSpot").AddComponent<Light>();
                 spot.transform.SetParent(root, false);
-                spot.transform.position = g + new Vector3(6.6f * sx, 1.0f, -7.2f);
+                spot.transform.position = g + new Vector3(6.6f * sx, 2.2f, -7.2f); // lamp height on its stand
                 spot.transform.LookAt(g + Vector3.up * 1.2f);
                 spot.type = LightType.Spot;
                 spot.spotAngle = 70f;
                 spot.range = 22f;
-                spot.intensity = 6f;
+                spot.intensity = 11f; // work lights: keep the weapon and pit readable (VS-3)
                 spot.color = new Color(1f, 0.92f, 0.78f);
                 spot.shadows = LightShadows.None;
                 _ = fl;
@@ -285,11 +285,11 @@ namespace AirDefense.EditorTools
             for (int i = 0; i < 10; i++)
             {
                 float a = (i / 10f) * 300f + 30f;
-                Vector3 p = new Vector3(g.x, 0f, g.z) + Quaternion.Euler(0, a, 0) * Vector3.forward * 12.5f;
+                Vector3 p = new Vector3(g.x, 0f, g.z) + Quaternion.Euler(0, a, 0) * Vector3.forward * 21.5f; // round the berm foot
                 Prop("concrete_barrier", root, p, a + 90f);
             }
             for (int i = 0; i < 6; i++)
-                Prop("concrete_barrier", root, new Vector3(-6f + (i % 2) * 12f, 0f, -75f - (i / 2) * 6f), 90f);
+                Prop("concrete_barrier", root, new Vector3(-6f + (i % 2) * 12f, 0f, -82f - (i / 2) * 6f), 90f);
 
             // Supplies by the buildings.
             Prop("generator", root, new Vector3(13.5f, 0f, 14f), 0f);

@@ -119,7 +119,7 @@ A **visual vertical slice** (brief §21) before M3b, in small reviewable steps, 
 |---|---|---|---|
 | VS-1 | Player-facing presentation: hide diagnostics, review-build option, immersive mode and safe areas | Code | **Done 2026-11-24** — see §6 |
 | VS-2 | HUD design system: font, tokens, TextMeshPro, new radar with sweep, weapon tiles, FIRE control, prompts, threat markers | Code + UI art | **Done 2026-11-24** (3:2 verified on the Pad 8; other aspect ratios pending) — see §6 |
-| VS-3 | Emplacement redesign + gameplay camera tuning (ZU pit, revetment, lit work area) | Blender + code | Camera framing captures |
+| VS-3 | Emplacement redesign + gameplay camera tuning (ZU pit, revetment, lit work area) | Blender + code | **Done 2026-11-24** — see §6 |
 | VS-4 | Lighting: hierarchy, baked lightmaps/probes for the base, searchlight beam shader and lamp glow | Code + pipeline | Night readability captures, fps |
 | VS-5 | Environment: site layout landmarks, modelled terrain and ridges, HESCO/T-walls, LODs | Blender + code | Wide and gameplay captures |
 | VS-6 | ZU-23-2 hero material pass and grounding; decide on commissioning a hero model | In-house / decision | Close-up captures |
@@ -150,3 +150,12 @@ Details: `VISUAL_PRODUCTION_STANDARD.md`, `HUD_UI_SPECIFICATION.md`, `ENVIRONMEN
 - Prompts are cards beside their control (aim zone, FIRE, above the ammo panel), never over the weapon or aim point; threat markers use threat/critical colours, max six range labels; amber lead ring.
 - Verified on the Pad 8 (review build): `docs/visual/captures/2026-11-24_VS2_*.png`. Tests: 36 EditMode + 3 PlayMode pass.
 - Not yet verified: 4:3, 16:9 and 20:9 layouts (checklist P3), pause/after-action screens in detail.
+
+### VS-3 — ZU-23-2 emplacement and camera framing (2026-11-24)
+- Box berm replaced by a round earth mound with sloped sides (top r 10.5 m, foot r 20 m, 14 m high) and a gravel pit floor; dried-mud texture at real scale.
+- Sandbag revetment: 486 individual bags (bevelled, pinched ends, sag, per-bag UV offsets) in a staggered double ring — 4 courses (~0.55 m) across the threat side, 5–7 courses (~0.95 m) on the flanks, rear access gap under the camera. 52k triangles.
+- Concrete gun pad; work lights on the rear stands raised to lamp height and brightened (11) so the weapon and pit are lit by two layers (moon + practical).
+- Camera: distance 7.8 m, height 3.2 m, view tilt 13° (from 7.5 / 2.8 / 10°): horizon higher, the base visible below it, aim point ~28% from the top.
+- Items overlapped by the bigger mound moved: road start, barrier ring (r 21.5 m), south barriers, checkpoint barriers, a street lamp, the gate guard.
+- Verified on the Pad 8 (review build): `docs/visual/captures/2026-11-24_VS3_zu_front.png`; camera sweep north/east/south/low elevation shows no clipping (`…_VS3_camera_sweep.png`).
+- Still open for this area: crew ammo niches and a hooded work light model (props), contact-shadow quality under the gun (VS-4 lighting), the gun's own materials (VS-6).

@@ -15,7 +15,7 @@ Scope (brief §21): the night installation, ZU-23-2 as hero weapon, one represen
 | E4 | Searchlights | Beams have a visible source, soft edges and falloff; no hard-edged flat strips | |
 | W1 | ZU-23-2 hero quality | Barrels, mount, seats, sights and ammo boxes recognisable; at least three distinct materials (paint, bare metal, rubber) visible in the gameplay capture | |
 | W2 | Weapon grounding | Contact shadows under wheels/jacks; no gap or sinking at the ground contact | |
-| W3 | Motion | Full traverse and elevation sweep without clipping through the weapon, the pit or the camera | |
+| W3 | Motion | Full traverse and elevation sweep without clipping through the weapon, the pit or the camera | **Pass for the camera vs. pit/revetment (VS-3)**; weapon self-clipping still to check |
 | T1 | Threat readability | The threat's silhouette is recognisable at 800 m and its light/marker at 3 km; the radar contact and the world marker highlight together | |
 | T2 | Engagement sequence | Detection (radar + sound) → marker → player fire (flash, tracers, sound) → hit feedback → destruction effect → result in the HUD, all visible in one recording | |
 | T3 | Impact sequence | A leaked threat produces a blast, smoke and lasting damage on the base, with HUD and audio feedback | |
