@@ -108,7 +108,7 @@ Classification required by brief v1.1 §20: **existing and usable**, **needs imp
 | M-04 | 2K22 Tunguska | Needs improvement (rig for M4, materials) | Claude (in-house) | CC-BY 4.0 | Display only |
 | M-06/07 | Quadcopter, fixed-wing drone | **Temporary placeholder** (greybox primitives) → new asset required | User decision (licensed store / CC-BY) | — | Placeholder in game |
 | M-08–M-11 | Loitering munition, rocket/mortar, cruise missile, aircraft | New asset required | Claude (simple shapes) / User decision | — | Not started |
-| M-12, A-01 | Soldiers and animations | External artist/tool required (licensed pack) | User decision | — | Not started |
+| M-12, A-01 | Soldiers and animations | User-supplied models (below), inspected 2026-11-24; animations still needed (Mixamo-compatible rigs) | User / Claude (in-house processing) | CC-BY 4.0 | Inspected, not imported |
 | E-01 | Base buildings (box + facade detail) | Needs improvement (silhouettes, roofs, bunker) | Claude (in-house) | CC0 props + project | Integrated |
 | E-01b | Emplacements: ZU pit, weapon pads, HESCO/T-walls, revetments | New asset required (currently textured boxes = temporary placeholder) | Claude (in-house Blender) | Project-original | Placeholder |
 | E-01c | Radar tower + rotating antenna, command bunker, gate/guard post | New asset required | Claude (in-house Blender) | Project-original | Placeholder (mast + bar) |
@@ -127,3 +127,13 @@ Classification required by brief v1.1 §20: **existing and usable**, **needs imp
 
 Textures (2K): `dry_ground_01` (outside ground), `worn_asphalt` (roads), `painted_plaster_wall` (command, barracks), `worn_corrugated_iron` (hangar), `container_side` (depot), `gravel_concrete` (apron).
 Models: `exterior_aircon_unit`, `rollershutter_door`, `rollershutter_window_01`, `modular_airduct_rectangular_01`, `security_camera_01`, `utility_box_01`, `propane_tank`, `old_tyre`, `plastic_crate_01`, `cardboard_box_01`, `covered_car`, `namaqualand_boulder_02`, `namaqualand_boulder_04`, `rock_07`, `wild_rooibos_bush`, `dead_tree_trunk`, `industrial_wall_lamp`, `metal_trash_can`, `cement_bag`, `concrete_road_barrier_02`, `street_lamp_01`. Downloaded but not used: `modular_electricity_poles` (too heavy), `shrub_01`.
+
+### User-supplied soldier models (2026-11-24), `SourceArt/Characters/` — inspected with `tools/blender/probe_characters.py`
+
+| File | Title, author, source | Licence | Tris | Rig | Animations | Findings |
+|---|---|---|---|---|---|---|
+| soldier1.glb | "Russian Soldier" by doctortex, https://sketchfab.com/3d-models/russian-soldier-e9aa211b67264dc086af1d2f4d4e3d84 | CC-BY 4.0 | 15.7k | Mixamo skeleton, 50 bones, T-pose | none | Lower quality: camouflage texture shows patchy UV seams; national camouflage pattern (EMR-style) |
+| soldier2.glb | "Ukrainian Soldier" by doctortex, https://sketchfab.com/3d-models/ukrainian-soldier-94f74f6bdd994733a8a40c7ff088e12f | CC-BY 4.0 | 20.5k | Mixamo skeleton, 42 bones, T-pose | none | Same issues as soldier1; national pixel camouflage pattern |
+| soldier_full_gear.glb | "Soldier Full Tactical Gear" by DanlyVostok, https://sketchfab.com/3d-models/soldier-full-tactical-gear-850593a8c7114c188395ba1849a66eb9 | CC-BY 4.0 | 84.2k | Character Creator skeleton, 114 bones, A-pose | one idle pose | High quality. **Chest patch reads "РОССИЯ" (Russia) with a flag patch, and a flag patch on the back: must be painted out before use (R-14)**. Needs LODs (84k is too heavy for several crew figures) |
+
+All three report bounds of ~2.8 m height in Blender although they render at human size: a stray or scaled node must be found and fixed when processing.
