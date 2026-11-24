@@ -118,7 +118,7 @@ A **visual vertical slice** (brief §21) before M3b, in small reviewable steps, 
 | Step | Content | Kind | Review output |
 |---|---|---|---|
 | VS-1 | Player-facing presentation: hide diagnostics, review-build option, immersive mode and safe areas | Code | **Done 2026-11-24** — see §6 |
-| VS-2 | HUD design system: font, tokens, TextMeshPro, new radar with sweep, weapon tiles, FIRE control, prompts, threat markers | Code + UI art | HUD screenshots at 16:9, 20:9, 3:2 |
+| VS-2 | HUD design system: font, tokens, TextMeshPro, new radar with sweep, weapon tiles, FIRE control, prompts, threat markers | Code + UI art | **Done 2026-11-24** (3:2 verified on the Pad 8; other aspect ratios pending) — see §6 |
 | VS-3 | Emplacement redesign + gameplay camera tuning (ZU pit, revetment, lit work area) | Blender + code | Camera framing captures |
 | VS-4 | Lighting: hierarchy, baked lightmaps/probes for the base, searchlight beam shader and lamp glow | Code + pipeline | Night readability captures, fps |
 | VS-5 | Environment: site layout landmarks, modelled terrain and ridges, HESCO/T-walls, LODs | Blender + code | Wide and gameplay captures |
@@ -140,3 +140,13 @@ Details: `VISUAL_PRODUCTION_STANDARD.md`, `HUD_UI_SPECIFICATION.md`, `ENVIRONMEN
 - Build tool: curl retry messages no longer abort the Gradle dependency seeding (needed for release builds).
 - **Verified on the Pad 8 (review build):** no debug text or watermark (`docs/visual/captures/2026-11-24_VS1_review_start.png`); system bars hidden again after pulling down the notification shade and after returning from recent apps (`…_after_shade.png`, `…_after_recents.png`; `dumpsys window`: statusBars and navigationBars `visible=false`).
 - Not verified: the four-finger toggle (adb cannot send a four-finger touch); the user's own screenshot gesture (to be checked on the next review).
+
+### VS-2 — HUD design system (2026-11-24)
+- Typography: Barlow Semi Condensed (SIL OFL) in four weights, UGUI dynamic font (TextMeshPro deferred, see HUD spec §11).
+- Tokens (`UI/UiTheme.cs`): ink, panel, system, info, caution, threat, critical, disabled; one panel style (fill + 1.5 px rounded line).
+- Radar: 2.5 s sweep with afterglow, 1/2/3 km labelled rings, cross lines, weapon facing wedge; drone triangles / aircraft chevrons pointing along their track, threat colour, pulsing critical when diving; bracket on the contact nearest the bore; blue ring when an autonomous weapon engages it.
+- Weapon tiles: model silhouette icon (`tools/blender/render_weapon_icons.py`), name, live state (MANUAL / AUTO / ENGAGING / RELOAD / OVERHEAT / LOCKED / TAP TO UNLOCK), one value (ammo, reload seconds, cost), thin bar (ammo, reload, credit progress), state accent strip.
+- Ammo panel, installation panel, framed banner, icon zoom button, ring-style FIRE button (pressed fill; grey ring + "RELOAD"/"HOT" when it cannot fire).
+- Prompts are cards beside their control (aim zone, FIRE, above the ammo panel), never over the weapon or aim point; threat markers use threat/critical colours, max six range labels; amber lead ring.
+- Verified on the Pad 8 (review build): `docs/visual/captures/2026-11-24_VS2_*.png`. Tests: 36 EditMode + 3 PlayMode pass.
+- Not yet verified: 4:3, 16:9 and 20:9 layouts (checklist P3), pause/after-action screens in detail.

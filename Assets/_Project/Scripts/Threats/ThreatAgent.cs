@@ -15,6 +15,8 @@ namespace AirDefense.Threats
         public Vector3 Velocity { get; private set; }
         public float Health { get; private set; }
         public int Id { get; private set; }
+        /// <summary>In its terminal dive onto the target (radar shows it as critical).</summary>
+        public bool Diving => _diving;
 
         private Vector3 _target;
         private float _age;

@@ -42,7 +42,7 @@ namespace AirDefense.UI
             m.threats = threats;
             m.cam = cam;
             m.gun = gun;
-            m._leadRing = UiFactory.Image("LeadRing", root, new Color(1f, 0.95f, 0.4f, 0.9f), UiFactory.Ring);
+            m._leadRing = UiFactory.Image("LeadRing", root, UiTheme.Caution.WithAlpha(0.9f), UiFactory.Ring);
             m._leadRing.rectTransform.anchorMin = m._leadRing.rectTransform.anchorMax = Vector2.zero;
             m._leadRing.rectTransform.sizeDelta = new Vector2(34f, 34f);
             return m;
@@ -61,6 +61,8 @@ namespace AirDefense.UI
             Vector3 bore = gun.BoreDirection;
 
             int i = 0;
+            int labels = 0;
+            const int MaxLabels = 6; // HUD_UI_SPECIFICATION.md §8: brackets only beyond six labelled contacts
             for (; i < list.Count; i++)
             {
                 ThreatAgent t = list[i];
@@ -71,13 +73,14 @@ namespace AirDefense.UI
                 bool onScreen = inFront && sp.x >= 0 && sp.x <= screen.x && sp.y >= 0 && sp.y <= screen.y;
                 float dist = Vector3.Distance(camPos, wp);
 
-                mk.bracket.color = mk.arrow.color = mk.label.color = t.Definition.radarColor;
+                Color c = t.Diving ? UiTheme.Critical : UiTheme.Threat;
+                mk.bracket.color = mk.arrow.color = mk.label.color = c;
                 if (onScreen)
                 {
                     mk.root.anchoredPosition = new Vector2(sp.x, sp.y) / scale;
                     mk.bracket.enabled = true;
                     mk.arrow.enabled = false;
-                    mk.label.enabled = true;
+                    mk.label.enabled = labels++ < MaxLabels;
                     mk.label.text = dist >= 1000f ? $"{dist / 1000f:0.0} km" : $"{dist:0} m";
                 }
                 else
@@ -155,13 +158,13 @@ namespace AirDefense.UI
             {
                 var root = UiFactory.Rect("Marker", _root);
                 root.anchorMin = root.anchorMax = Vector2.zero;
-                root.sizeDelta = new Vector2(46f, 46f);
+                root.sizeDelta = new Vector2(40f, 40f);
                 var mk = new Marker { root = root };
                 mk.bracket = UiFactory.Image("Bracket", root, Color.white, UiFactory.Bracket);
                 mk.bracket.rectTransform.Stretch(Vector2.zero, Vector2.one);
                 mk.arrow = UiFactory.Image("Arrow", root, Color.white, UiFactory.Arrow);
-                mk.arrow.rectTransform.Anchor(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(34f, 34f));
-                mk.label = UiFactory.Text("Range", root, "", 20, TextAnchor.UpperCenter);
+                mk.arrow.rectTransform.Anchor(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(28f, 28f));
+                mk.label = UiFactory.Text("Range", root, "", UiTheme.Caption, TextAnchor.UpperCenter, null, UiTheme.Weight.SemiBold).Underlay();
                 mk.label.rectTransform.Anchor(new Vector2(0.5f, 0f), new Vector2(0.5f, 1f), new Vector2(0f, -4f), new Vector2(120f, 24f));
                 _markers.Add(mk);
             }

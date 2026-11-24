@@ -29,8 +29,20 @@ namespace AirDefense.UI
         public TextAsset credits;
         private GameObject _credits;
 
-        private readonly System.Collections.Generic.List<(Data.WeaponDefinition def, Text state, Image bg, Outline border, Text title)> _tiles =
-            new System.Collections.Generic.List<(Data.WeaponDefinition, Text, Image, Outline, Text)>();
+        /// <summary>One weapon tile (HUD_UI_SPECIFICATION.md §5): icon, name, live state, one key value, a thin bar.</summary>
+        private sealed class WeaponTile
+        {
+            public Data.WeaponDefinition def;
+            public Image bg, border, accent, icon, bar, barBg;
+            public Text name, state, value;
+        }
+        private readonly System.Collections.Generic.List<WeaponTile> _tiles = new System.Collections.Generic.List<WeaponTile>();
+        private Text _ammoName;
+        private Text _healthValue;
+        private Image _fireRing;
+        private Text _fireLabel;
+        private RectTransform _promptCard;
+        private RectTransform _bannerCard;
         private ThreatMarkers _markers;
         private RadarView _radar;
         private GameObject _unlockConfirm;
@@ -154,118 +166,203 @@ namespace AirDefense.UI
 
             _markers = ThreatMarkers.Build(_safe, _canvas, threats, cam, player.mount);
 
-            // Crosshair
             // Crosshair: drawn where the gun's bore actually points (third-person camera is tilted, see LateUpdate).
-            var ch = UiFactory.Image("Crosshair", _safe, new Color(0.7f, 1f, 0.7f, 0.8f), UiFactory.Ring);
-            ch.rectTransform.Anchor(Vector2.zero, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(46f, 46f));
+            var ch = UiFactory.Image("Crosshair", _safe, UiTheme.System.WithAlpha(0.85f), UiFactory.Ring);
+            ch.rectTransform.Anchor(Vector2.zero, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(44f, 44f));
             _crosshair = ch.rectTransform;
-            var dot = UiFactory.Image("Dot", ch.transform, new Color(0.7f, 1f, 0.7f, 0.9f), UiFactory.Circle);
-            dot.rectTransform.Anchor(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(6f, 6f));
+            var dot = UiFactory.Image("Dot", ch.transform, UiTheme.System, UiFactory.Circle);
+            dot.rectTransform.Anchor(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(5f, 5f));
 
-            // Radar (top-left) and installation health below it.
+            // Radar (top-left) and installation status below it.
             var radar = RadarView.Build(_safe, threats, player.mount, threats.installationCenter);
             _radar = radar;
             radar.GetComponent<RectTransform>().Anchor(new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(24f, -24f), new Vector2(280f, 280f));
 
-            var hpBg = UiFactory.Image("HealthBar", _safe, UiFactory.Panel, UiFactory.Rounded);
-            hpBg.rectTransform.Anchor(new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(24f, -316f), new Vector2(280f, 30f));
-            _healthFill = UiFactory.Image("Fill", hpBg.transform, UiFactory.Accent, UiFactory.White);
-            _healthFill.rectTransform.Stretch(new Vector2(0.02f, 0.2f), new Vector2(0.98f, 0.8f));
-            _healthFill.type = Image.Type.Filled;
-            _healthFill.fillMethod = Image.FillMethod.Horizontal;
-            _healthText = UiFactory.Text("Label", hpBg.transform, "INSTALLATION 100%", 18, TextAnchor.MiddleCenter, Color.white);
-            _healthText.rectTransform.Stretch(Vector2.zero, Vector2.one);
-            var hpOutline = _healthText.gameObject.AddComponent<Outline>();
-            hpOutline.effectColor = new Color(0f, 0f, 0f, 0.9f);
-            hpOutline.effectDistance = new Vector2(1.5f, -1.5f);
+            var hp = UiFactory.PanelImage("HealthBar", _safe);
+            hp.rectTransform.Anchor(new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(24f, -316f), new Vector2(280f, 52f));
+            var hpLabel = UiFactory.Text("Label", hp.transform, "INSTALLATION", UiTheme.Caption, TextAnchor.UpperLeft, UiTheme.InkDim, UiTheme.Weight.SemiBold);
+            hpLabel.rectTransform.Stretch(new Vector2(0.05f, 0.4f), new Vector2(0.7f, 0.92f));
+            _healthValue = UiFactory.Text("Value", hp.transform, "100%", UiTheme.Label, TextAnchor.UpperRight, UiTheme.Ink, UiTheme.Weight.SemiBold);
+            _healthValue.rectTransform.Stretch(new Vector2(0.5f, 0.38f), new Vector2(0.95f, 0.95f));
+            _healthFill = ThinBar(hp.transform, new Vector2(0.05f, 0.16f), new Vector2(0.95f, 0.28f), UiTheme.System);
+            _healthText = hpLabel; // kept for older references
 
-            // Top-centre banner.
-            _banner = UiFactory.Text("Banner", _safe, "", 40, TextAnchor.UpperCenter, UiFactory.Warn);
-            _banner.rectTransform.Anchor(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -24f), new Vector2(900f, 60f));
+            // Top-centre banner: a framed card, hidden when empty.
+            var bannerImg = UiFactory.PanelImage("Banner", _safe);
+            _bannerCard = bannerImg.rectTransform;
+            _bannerCard.Anchor(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -24f), new Vector2(760f, 58f));
+            _banner = UiFactory.Text("Text", bannerImg.transform, "", UiTheme.Banner - 6, TextAnchor.MiddleCenter, UiTheme.Caution, UiTheme.Weight.SemiBold);
+            _banner.rectTransform.Stretch(Vector2.zero, Vector2.one);
+            _bannerCard.gameObject.SetActive(false);
 
             // Pause (top-right).
-            var pauseBtn = UiFactory.Button("Pause", _safe, "II", 40, () => SetPaused(true));
-            pauseBtn.GetComponent<RectTransform>().Anchor(new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-24f, -24f), new Vector2(100f, 100f));
+            var pauseBtn = UiFactory.Button("Pause", _safe, "II", 34, () => SetPaused(true));
+            pauseBtn.GetComponent<RectTransform>().Anchor(new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-24f, -24f), new Vector2(96f, 96f));
 
             // Weapon tiles (bottom-left), from the roster (C-04, C-05): tap an unlocked weapon to operate it
             // (the others defend on their own), or the next locked one to unlock it with credits.
             for (int i = 0; i < roster.weapons.Count; i++)
-                Tile(roster.weapons[i], new Vector2(24f + i * 170f, 24f));
+                Tile(roster.weapons[i], new Vector2(24f + i * 188f, 24f));
             RefreshTiles();
 
             // Ammo / heat (bottom-centre). Tap to reload early.
             var ammoBtn = UiFactory.Button("Ammo", _safe, "", 10, () => { input.ReloadRequested = true; _hintedReload = true; });
-            ammoBtn.GetComponent<RectTransform>().Anchor(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 34f), new Vector2(440f, 110f));
-            _ammoText = UiFactory.Text("AmmoText", ammoBtn.transform, "", 26, TextAnchor.UpperLeft);
-            _ammoText.rectTransform.Stretch(new Vector2(0.05f, 0.55f), new Vector2(0.6f, 0.95f));
-            _statusText = UiFactory.Text("Status", ammoBtn.transform, "", 24, TextAnchor.UpperRight, UiFactory.Warn);
-            _statusText.rectTransform.Stretch(new Vector2(0.4f, 0.55f), new Vector2(0.95f, 0.95f));
-            _ammoFill = Bar(ammoBtn.transform, new Vector2(0.05f, 0.30f), new Vector2(0.95f, 0.45f), UiFactory.Accent);
-            _heatFill = Bar(ammoBtn.transform, new Vector2(0.05f, 0.10f), new Vector2(0.95f, 0.22f), UiFactory.Warn);
+            ammoBtn.GetComponent<RectTransform>().Anchor(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(40f, 24f), new Vector2(380f, 84f));
+            _ammoName = UiFactory.Text("Weapon", ammoBtn.transform, "", UiTheme.Caption, TextAnchor.UpperLeft, UiTheme.InkDim, UiTheme.Weight.SemiBold);
+            _ammoName.rectTransform.Stretch(new Vector2(0.05f, 0.5f), new Vector2(0.6f, 0.9f));
+            _statusText = UiFactory.Text("Status", ammoBtn.transform, "", UiTheme.Caption, TextAnchor.LowerLeft, UiTheme.Caution, UiTheme.Weight.SemiBold);
+            _statusText.rectTransform.Stretch(new Vector2(0.05f, 0.28f), new Vector2(0.6f, 0.56f));
+            _ammoText = UiFactory.Text("Count", ammoBtn.transform, "", UiTheme.Value + 4, TextAnchor.MiddleRight, UiTheme.Ink, UiTheme.Weight.SemiBold);
+            _ammoText.rectTransform.Stretch(new Vector2(0.45f, 0.28f), new Vector2(0.95f, 0.95f));
+            _ammoFill = ThinBar(ammoBtn.transform, new Vector2(0.05f, 0.15f), new Vector2(0.95f, 0.22f), UiTheme.System);
+            _heatFill = ThinBar(ammoBtn.transform, new Vector2(0.05f, 0.06f), new Vector2(0.95f, 0.11f), UiTheme.Caution);
 
-            // FIRE (bottom-right) and ZOOM above it.
-            var fire = UiFactory.Image("Fire", _safe, new Color(0.75f, 0.18f, 0.15f, 0.85f), UiFactory.Circle, raycast: true);
-            fire.rectTransform.Anchor(new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-40f, 40f), new Vector2(240f, 240f));
-            var fireLabel = UiFactory.Text("Label", fire.transform, "FIRE", 44);
-            fireLabel.rectTransform.Stretch(Vector2.zero, Vector2.one);
+            // FIRE (bottom-right): dark disc with a red ring; fills when pressed, says why when it can't fire.
+            var fire = UiFactory.Image("Fire", _safe, new Color(0.05f, 0.03f, 0.03f, 0.5f), UiFactory.Circle, raycast: true);
+            fire.rectTransform.Anchor(new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-40f, 40f), new Vector2(200f, 200f));
+            _fireRing = UiFactory.Image("Ring", fire.transform, UiTheme.Critical, UiFactory.Ring);
+            _fireRing.rectTransform.Stretch(Vector2.zero, Vector2.one);
+            _fireLabel = UiFactory.Text("Label", fire.transform, "FIRE", 38, TextAnchor.MiddleCenter, UiTheme.Ink, UiTheme.Weight.SemiBold);
+            _fireLabel.rectTransform.Stretch(Vector2.zero, Vector2.one);
             var hold = fire.gameObject.AddComponent<HoldButton>();
             hold.Changed = held => { input.FireHeld = held; if (held) _fired = true; };
             _fireImage = fire;
 
-            var zoom = UiFactory.Button("Zoom", _safe, "ZOOM", 30, () => input.ZoomToggleRequested = true);
-            zoom.GetComponent<RectTransform>().Anchor(new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-85f, 310f), new Vector2(150f, 84f));
+            // Zoom: icon button above FIRE.
+            var zoom = UiFactory.Button("Zoom", _safe, "", 10, () => input.ZoomToggleRequested = true);
+            zoom.GetComponent<RectTransform>().Anchor(new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-92f, 262f), new Vector2(96f, 96f));
+            var lens = UiFactory.Image("Icon", zoom.transform, UiTheme.Ink, UiFactory.Lens);
+            lens.rectTransform.Stretch(new Vector2(0.2f, 0.2f), new Vector2(0.8f, 0.8f));
 
-            // Contextual prompt.
-            _prompt = UiFactory.Text("Prompt", _safe, "", 34, TextAnchor.MiddleCenter, Color.white);
-            _prompt.rectTransform.Anchor(new Vector2(0.5f, 0.32f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1200f, 60f));
-            var outline = _prompt.gameObject.AddComponent<Outline>();
-            outline.effectColor = new Color(0f, 0f, 0f, 0.8f);
-            outline.effectDistance = new Vector2(2f, -2f);
+            // Contextual prompt card (placed beside the control it explains, see ShowPrompt).
+            var card = UiFactory.PanelImage("Prompt", _safe);
+            _promptCard = card.rectTransform;
+            _prompt = UiFactory.Text("Text", card.transform, "", UiTheme.Body, TextAnchor.MiddleCenter, UiTheme.Ink, UiTheme.Weight.Medium);
+            _prompt.rectTransform.Stretch(Vector2.zero, Vector2.one);
+            _promptCard.gameObject.SetActive(false);
+        }
+
+        private static Image ThinBar(Transform parent, Vector2 min, Vector2 max, Color color)
+        {
+            var bg = UiFactory.Image("BarBg", parent, UiTheme.Ink.WithAlpha(0.12f), UiFactory.White);
+            bg.rectTransform.Stretch(min, max);
+            var fill = UiFactory.Image("Fill", bg.transform, color, UiFactory.White);
+            fill.rectTransform.Stretch(Vector2.zero, Vector2.one);
+            fill.type = Image.Type.Filled;
+            fill.fillMethod = Image.FillMethod.Horizontal;
+            return fill;
         }
 
         private void Tile(Data.WeaponDefinition def, Vector2 pos)
         {
-            string name = def.displayName.Replace("2K22 ", "").ToUpperInvariant();
-            var bg = UiFactory.Image("Tile_" + def.weaponId, _safe, new Color(0.1f, 0.1f, 0.1f, 0.7f), UiFactory.Rounded, raycast: true);
-            bg.rectTransform.Anchor(Vector2.zero, Vector2.zero, pos, new Vector2(160f, 120f));
-            var button = bg.gameObject.AddComponent<Button>();
-            button.targetGraphic = bg;
+            var t = new WeaponTile { def = def };
+            t.bg = UiFactory.Image("Tile_" + def.weaponId, _safe, UiTheme.Panel, UiFactory.Rounded, raycast: true);
+            t.bg.rectTransform.Anchor(Vector2.zero, Vector2.zero, pos, new Vector2(176f, 116f));
+            var button = t.bg.gameObject.AddComponent<Button>();
+            button.targetGraphic = t.bg;
             button.onClick.AddListener(() => OnTileTapped(def));
-            var border = bg.gameObject.AddComponent<Outline>();
-            border.effectColor = UiFactory.Accent;
-            border.effectDistance = new Vector2(3f, -3f);
-            var title = UiFactory.Text("Name", bg.transform, name, 24, TextAnchor.UpperCenter);
-            title.rectTransform.Stretch(new Vector2(0f, 0.5f), new Vector2(1f, 0.92f));
-            var st = UiFactory.Text("State", bg.transform, "", 18, TextAnchor.MiddleCenter);
-            st.rectTransform.Stretch(new Vector2(0f, 0.05f), new Vector2(1f, 0.5f));
-            _tiles.Add((def, st, bg, border, title));
+            t.border = UiFactory.Border(t.bg.transform, UiTheme.PanelLine);
+            t.accent = UiFactory.Image("Accent", t.bg.transform, UiTheme.System, UiFactory.White);
+            t.accent.rectTransform.Anchor(new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(5f, 0f), new Vector2(4f, 92f));
+
+            t.name = UiFactory.Text("Name", t.bg.transform, def.displayName.Replace("2K22 ", "").ToUpperInvariant(), UiTheme.Label,
+                                    TextAnchor.UpperLeft, UiTheme.Ink, UiTheme.Weight.SemiBold);
+            t.name.rectTransform.Stretch(new Vector2(0.1f, 0.68f), new Vector2(0.96f, 0.95f));
+            t.icon = UiFactory.Image("Icon", t.bg.transform, UiTheme.Ink, null);
+            var tex = Resources.Load<Texture2D>("UI/icon_" + def.weaponId);
+            if (tex != null) t.icon.sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
+            t.icon.preserveAspect = true;
+            t.icon.enabled = tex != null;
+            t.icon.rectTransform.Stretch(new Vector2(0.1f, 0.34f), new Vector2(0.94f, 0.7f));
+            t.state = UiFactory.Text("State", t.bg.transform, "", UiTheme.Caption, TextAnchor.MiddleLeft, UiTheme.InkDim, UiTheme.Weight.SemiBold);
+            t.state.rectTransform.Stretch(new Vector2(0.1f, 0.1f), new Vector2(0.6f, 0.34f));
+            t.value = UiFactory.Text("Value", t.bg.transform, "", UiTheme.Caption, TextAnchor.MiddleRight, UiTheme.Ink, UiTheme.Weight.Medium);
+            t.value.rectTransform.Stretch(new Vector2(0.5f, 0.1f), new Vector2(0.94f, 0.34f));
+            t.bar = ThinBar(t.bg.transform, new Vector2(0.1f, 0.05f), new Vector2(0.94f, 0.09f), UiTheme.System);
+            t.barBg = t.bar.transform.parent.GetComponent<Image>();
+            _tiles.Add(t);
         }
 
-        /// <summary>Tile states from the saved profile (UI_UX_FLOW.md §3).</summary>
+        /// <summary>Tile states from the saved profile and live weapon state (HUD_UI_SPECIFICATION.md §5).</summary>
         private void RefreshTiles()
         {
             PlayerProfile p = ProfileStore.Profile;
             Data.WeaponDefinition next = roster.NextUnlock(p);
-            foreach (var (def, state, bg, border, title) in _tiles)
+            foreach (var t in _tiles)
             {
+                var def = t.def;
                 bool manual = def == player.mount.definition;
                 bool unlocked = p.IsUnlocked(def.weaponId);
-                bool available = player.StationFor(def) != null;
-                border.enabled = manual;
-                bg.color = manual ? new Color(0.12f, 0.3f, 0.14f, 0.9f)
-                         : unlocked && available ? new Color(0.1f, 0.2f, 0.25f, 0.8f)
-                         : new Color(0.1f, 0.1f, 0.1f, 0.7f);
-                title.color = manual || (unlocked && available) ? Color.white : new Color(1f, 1f, 1f, 0.5f);
-                state.color = manual ? UiFactory.Accent : unlocked && available ? new Color(0.6f, 0.85f, 1f, 0.9f) : new Color(1f, 1f, 1f, 0.45f);
-                if (manual) state.text = "MANUAL";
-                else if (unlocked) state.text = available ? "AUTO\ntap to operate" : "UNLOCKED";
+                WeaponStation st = player.StationFor(def);
+                bool barOn = false;
+                float bar = 0f;
+                Color accent, barColor = UiTheme.System, stateColor;
+                string state, value = "";
+
+                if (manual || (unlocked && st != null))
+                {
+                    WeaponState ws = st != null ? st.State : player.State;
+                    var auto = st != null ? st.GetComponent<AutonomousWeaponController>() : null;
+                    accent = manual ? UiTheme.System : UiTheme.Info;
+                    stateColor = accent;
+                    state = manual ? "MANUAL" : auto != null && auto.Engaging ? "ENGAGING" : "AUTO";
+                    value = $"{ws.Ammo:N0}";
+                    barOn = true;
+                    bar = (float)ws.Ammo / ws.Def.magazineSize;
+                    barColor = accent;
+                    if (ws.Reloading)
+                    {
+                        state = "RELOAD";
+                        stateColor = barColor = UiTheme.Caution;
+                        bar = ws.ReloadProgress01;
+                        value = $"{(1f - ws.ReloadProgress01) * ws.Def.reloadTime:0}s";
+                    }
+                    else if (ws.Overheated)
+                    {
+                        state = "OVERHEAT";
+                        stateColor = barColor = UiTheme.Caution;
+                        bar = ws.Heat01;
+                    }
+                }
+                else if (unlocked)
+                {
+                    accent = stateColor = UiTheme.Disabled;
+                    state = "UNLOCKED";
+                }
                 else if (def == next)
                 {
                     bool afford = p.credits >= def.unlockCost;
-                    state.text = afford ? $"TAP TO UNLOCK\n{def.unlockCost:N0} cr" : $"LOCKED\n{p.credits:N0} / {def.unlockCost:N0} cr";
-                    if (afford) state.color = UiFactory.Warn;
+                    accent = afford ? UiTheme.Caution : UiTheme.Disabled;
+                    stateColor = afford ? UiTheme.Caution : UiTheme.InkDim;
+                    state = afford ? "TAP TO UNLOCK" : "LOCKED";
+                    value = $"{def.unlockCost:N0} cr";
+                    barOn = !afford;
+                    bar = Mathf.Clamp01((float)p.credits / Mathf.Max(1, def.unlockCost));
+                    barColor = UiTheme.Caution;
                 }
-                else state.text = $"LOCKED\n{def.unlockCost:N0} cr";
+                else
+                {
+                    accent = UiTheme.Disabled;
+                    stateColor = UiTheme.InkDim;
+                    state = "LOCKED";
+                    value = $"{def.unlockCost:N0} cr";
+                }
+
+                bool active = manual || (unlocked && st != null);
+                bool unlockReady = !unlocked && def == next && p.credits >= def.unlockCost;
+                t.bg.color = manual ? new Color(0.07f, 0.17f, 0.11f, 0.9f) : UiTheme.Panel; // dark green: selected, text stays readable
+                float pulse = unlockReady ? 0.55f + 0.45f * Mathf.PingPong(Time.unscaledTime * 1.5f, 1f) : 1f;
+                t.border.color = manual ? UiTheme.System : unlockReady ? UiTheme.Caution.WithAlpha(pulse) : UiTheme.PanelLine;
+                t.accent.color = accent;
+                t.name.color = active || unlockReady ? UiTheme.Ink : UiTheme.InkDim;
+                t.icon.color = manual ? UiTheme.Ink : active ? UiTheme.Ink.WithAlpha(0.8f) : UiTheme.Disabled.WithAlpha(0.7f);
+                t.state.text = state;
+                t.state.color = stateColor;
+                t.value.text = value;
+                t.value.color = active ? UiTheme.Ink : UiTheme.InkDim;
+                t.barBg.enabled = t.bar.enabled = barOn;
+                t.bar.fillAmount = bar;
+                t.bar.color = barColor;
             }
         }
 
@@ -303,7 +400,7 @@ namespace AirDefense.UI
                     ? "20 mm six-barrel rotary gun, 75 rounds a second. It tracks threats by radar and engages only those heading into the base. Its rounds self-destruct at about 2 km."
                     : "");
             _unlockConfirm.SetActive(true);
-            _prompt.text = "";
+            HidePrompt();
             _unlockConfirm.transform.SetAsLastSibling();
             if (director.Phase == MissionPhase.Running)
             {
@@ -382,7 +479,7 @@ namespace AirDefense.UI
         {
             var bg = UiFactory.Image(name, _safe, new Color(0f, 0f, 0f, 0.7f), raycast: true);
             bg.rectTransform.Stretch(Vector2.zero, Vector2.one);
-            var card = UiFactory.Image("Card", bg.transform, UiFactory.Panel, UiFactory.Rounded);
+            var card = UiFactory.PanelImage("Card", bg.transform, false, UiTheme.PanelSolid);
             card.rectTransform.Anchor(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1100f, 760f));
             return bg.gameObject;
         }
@@ -406,7 +503,7 @@ namespace AirDefense.UI
 
             // CC-BY-4.0 attribution (docs/ASSET_REGISTER.md §8). Moves to a Credits screen in M2.
             var credit = UiFactory.Text("Credit", card,
-                "ZU-23-2 model: \"ZU - 23\" by LuckySkink9661 (sketchfab.com), CC BY 4.0, modified (reduced and rigged). Other art: placeholder.",
+                "Models, textures, fonts and sounds: see Pause > Credits (CC BY 4.0 / CC0 / OFL; full list in the credits).",
                 16, TextAnchor.LowerCenter, new Color(1f, 1f, 1f, 0.5f));
             credit.horizontalOverflow = HorizontalWrapMode.Wrap;
             credit.rectTransform.Stretch(new Vector2(0.04f, 0.005f), new Vector2(0.96f, 0.06f));
@@ -578,19 +675,38 @@ namespace AirDefense.UI
             if (kb != null && kb.escapeKey.wasPressedThisFrame && director.Phase == MissionPhase.Running)
                 SetPaused(!_pause.activeSelf);
 
-            _healthFill.fillAmount = director.Health01;
-            _healthFill.color = director.Health01 > 0.5f ? UiFactory.Accent : director.Health01 > 0.25f ? UiFactory.Warn : UiFactory.Danger;
-            _healthText.text = $"INSTALLATION {director.Health01 * 100f:0}%";
+            float h = director.Health01;
+            Color hc = h > 0.5f ? UiTheme.System : h > 0.25f ? UiTheme.Caution : UiTheme.Critical;
+            _healthFill.fillAmount = h;
+            _healthFill.color = hc;
+            _healthValue.text = $"{h * 100f:0}%";
+            _healthValue.color = h > 0.5f ? UiTheme.Ink : hc;
 
             WeaponState s = player.State;
-            _ammoText.text = $"{s.Def.displayName.ToUpperInvariant()}   {s.Ammo}/{s.Def.magazineSize}";
+            _ammoName.text = s.Def.displayName.ToUpperInvariant();
+            _ammoText.text = s.Reloading ? $"{(1f - s.ReloadProgress01) * s.Def.reloadTime:0.0}s" : $"{s.Ammo}<size={UiTheme.Caption}> / {s.Def.magazineSize}</size>";
+            _ammoText.supportRichText = true;
             _ammoFill.fillAmount = s.Reloading ? s.ReloadProgress01 : (float)s.Ammo / s.Def.magazineSize;
+            _ammoFill.color = s.Reloading ? UiTheme.Caution : UiTheme.System;
             _heatFill.fillAmount = s.Heat01;
-            _heatFill.color = s.Overheated ? UiFactory.Danger : UiFactory.Warn;
-            _statusText.text = s.Reloading ? "RELOADING" : s.Overheated ? "OVERHEAT" : "";
-            _fireImage.color = input.FireHeld ? new Color(1f, 0.3f, 0.2f, 0.95f) : new Color(0.75f, 0.18f, 0.15f, 0.85f);
+            _heatFill.color = s.Overheated ? UiTheme.Critical : UiTheme.Caution;
+            _statusText.text = s.Reloading ? "RELOADING" : s.Overheated ? "OVERHEAT" : s.Heat01 > 0.7f ? "BARREL HOT" : "";
+            _statusText.color = s.Overheated ? UiTheme.Critical : UiTheme.Caution;
 
-            if (_banner.text.Length > 0 && Time.unscaledTime > _bannerUntil) _banner.text = "";
+            // FIRE: pressed fill; when it cannot fire, a grey ring and the reason.
+            bool blocked = s.Reloading || s.Overheated;
+            _fireImage.color = input.FireHeld && !blocked ? UiTheme.Critical.WithAlpha(0.8f) : new Color(0.05f, 0.03f, 0.03f, 0.5f);
+            _fireRing.color = blocked ? UiTheme.Disabled : UiTheme.Critical;
+            _fireLabel.text = s.Reloading ? "RELOAD" : s.Overheated ? "HOT" : "FIRE";
+            _fireLabel.color = blocked ? UiTheme.Caution : UiTheme.Ink;
+
+            RefreshTiles();
+
+            if (_bannerCard.gameObject.activeSelf && Time.unscaledTime > _bannerUntil)
+            {
+                _banner.text = "";
+                _bannerCard.gameObject.SetActive(false);
+            }
 
             UpdatePrompts();
         }
@@ -650,39 +766,65 @@ namespace AirDefense.UI
             StartMission();
         }
 
+        private enum PromptAt { Aim, Fire, Tip }
+
         private void UpdatePrompts()
         {
-            if (director.Phase != MissionPhase.Running) { _prompt.text = ""; return; }
+            if (director.Phase != MissionPhase.Running) { HidePrompt(); return; }
 
-            string text = "";
             if (!_dragged)
             {
-                text = "Drag on the left side of the screen to aim";
+                ShowPrompt("<  DRAG HERE TO AIM  >", PromptAt.Aim);
+                return;
             }
-            else if (!_fired && threats.Active.Count > 0)
+            if (!_fired && threats.Active.Count > 0)
             {
-                text = "Hold FIRE to shoot - follow the brackets and edge arrows";
+                ShowPrompt("HOLD TO FIRE", PromptAt.Fire);
+                return;
             }
-            else if (!_hintedLead && player.ManualRoundsFired >= 60 && director.Destroyed == 0)
+            if (!_hintedLead && player.ManualRoundsFired >= 60 && director.Destroyed == 0)
             {
                 _hintedLead = true;
                 Flash(GameSettings.Assist == AimAssist.Light
-                    ? "Aim at the yellow ring - it shows where to lead moving targets"
+                    ? "Aim at the amber ring - it leads moving targets"
                     : "Aim ahead of moving targets", 5f);
             }
             else if (!_hintedReload && player.State.Reloading)
             {
                 _hintedReload = true;
-                Flash("Tip: tap the ammo panel to reload early", 4f);
+                Flash("Tap the ammo panel to reload early", 4f);
             }
+            if (Time.unscaledTime > _promptUntil) HidePrompt();
+        }
 
-            if (text.Length > 0) _prompt.text = text;
-            else if (Time.unscaledTime > _promptUntil) _prompt.text = "";
+        /// <summary>Shows the prompt card next to the control it explains, never over the weapon or the aim point.</summary>
+        private void ShowPrompt(string text, PromptAt at)
+        {
+            _prompt.text = text;
+            _promptCard.gameObject.SetActive(true);
+            switch (at)
+            {
+                case PromptAt.Aim:  // inside the left aim zone
+                    _promptCard.Anchor(new Vector2(0.27f, 0.44f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(400f, 64f));
+                    break;
+                case PromptAt.Fire: // left of the FIRE button
+                    _promptCard.Anchor(new Vector2(1f, 0f), new Vector2(1f, 0.5f), new Vector2(-262f, 140f), new Vector2(250f, 64f));
+                    break;
+                default:            // above the ammo panel
+                    _promptCard.Anchor(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(40f, 124f), new Vector2(620f, 60f));
+                    break;
+            }
+        }
+
+        private void HidePrompt()
+        {
+            if (_promptCard.gameObject.activeSelf) _promptCard.gameObject.SetActive(false);
+            _prompt.text = "";
         }
 
         private void Flash(string text, float seconds)
         {
-            _prompt.text = text;
+            ShowPrompt(text, PromptAt.Tip);
             _promptUntil = Time.unscaledTime + seconds;
         }
 
@@ -690,6 +832,7 @@ namespace AirDefense.UI
         {
             _banner.text = text;
             _banner.color = color;
+            _bannerCard.gameObject.SetActive(true);
             _bannerUntil = Time.unscaledTime + seconds;
         }
 

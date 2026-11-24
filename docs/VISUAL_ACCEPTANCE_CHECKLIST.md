@@ -19,9 +19,9 @@ Scope (brief §21): the night installation, ZU-23-2 as hero weapon, one represen
 | T1 | Threat readability | The threat's silhouette is recognisable at 800 m and its light/marker at 3 km; the radar contact and the world marker highlight together | |
 | T2 | Engagement sequence | Detection (radar + sound) → marker → player fire (flash, tracers, sound) → hit feedback → destruction effect → result in the HUD, all visible in one recording | |
 | T3 | Impact sequence | A leaked threat produces a blast, smoke and lasting damage on the base, with HUD and audio feedback | |
-| H1 | HUD design system | One type family, the colour tokens from `HUD_UI_SPECIFICATION.md` §2, one panel style; colour never the only state signal | |
-| H2 | Radar | Animated sweep, labelled range rings, class symbols, selected-target state | |
-| H3 | Onboarding | Prompts sit next to their controls and disappear after the action; nothing covers the weapon or aim point | |
+| H1 | HUD design system | One type family, the colour tokens from `HUD_UI_SPECIFICATION.md` §2, one panel style; colour never the only state signal | **Pass (VS-2, Pad 8)** |
+| H2 | Radar | Animated sweep, labelled range rings, class symbols, selected-target state | **Pass (VS-2, Pad 8)** |
+| H3 | Onboarding | Prompts sit next to their controls and disappear after the action; nothing covers the weapon or aim point | **Pass (VS-2, Pad 8)** |
 | C1 | Cinematic hand-over | The last cinematic camera settles exactly on the gameplay camera; HUD reveals in stages; no second loading screen | |
 | F1 | Performance (High tier) | ≥ 59 fps average and ≤ 1% frames over 20 ms in scenarios (a)–(c) of `ANDROID_PERFORMANCE_BUDGET.md` §6 | |
 | F2 | Thermal | 20-minute soak without throttling below the target frame rate | |

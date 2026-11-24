@@ -96,6 +96,9 @@ Each tile: weapon silhouette icon, name, state, one key value (ammo or cost). No
 
 ## 11. Implementation notes
 
+**As built (VS-2, 2026-11-24):** tokens in `UI/UiTheme.cs`; `UiFactory` maps the older colour names onto them and adds the panel/border/underlay helpers, radar sprites and the zoom icon. Text uses UGUI dynamic fonts with the Barlow faces (not TextMeshPro yet: a TMP migration touches every UI script and is not needed for sharpness at the current sizes; revisit if outlines or very large text are needed).
+
+
 - New `UiTheme` ScriptableObject holding tokens (colours, fonts, sizes); `UiFactory` reads from it so components are consistent.
 - Radar sweep and symbols drawn with UGUI sprites and a small custom shader (afterglow) — no per-frame allocations.
 - HUD layout snapshot test (PlayMode) at the four aspect ratios to catch overlaps.

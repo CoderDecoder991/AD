@@ -24,6 +24,10 @@ listing or a linked page. Full asset tracking is in `docs/ASSET_REGISTER.md`.
   - Licence: CC BY 4.0 (creativecommons.org/licenses/by/4.0). Changes: posed, reduced, materials made opaque.
 - Base props from Poly Haven (polyhaven.com), CC0 1.0: Modular Chainlink Fence, Concrete Road Barrier, Concrete Road Barrier 02, Flood Lights, Portable Searchlight, Security Light, Street Lamp 01, Industrial Wall Lamp, Old Military Crate, Wooden Military Crate, Ammo Box, Metal Jerrycan Green, Barrel 01, Portable Generator, Exterior Aircon Unit, Rollershutter Door, Rollershutter Window 01, Modular Airduct Rectangular 01, Security Camera 01, Utility Box 01, Propane Tank, Old Tyre, Plastic Crate 01, Cardboard Box 01, Covered Car, Metal Trash Can, Cement Bag, Namaqualand Boulder 02 and 04, Rock 07, Wild Rooibos Bush, Dead Tree Trunk. Changes: parts selected, reduced, rescaled.
 
+## Fonts
+- Barlow Semi Condensed by The Barlow Project Authors (github.com/jpt/barlow), from Google Fonts.
+  - Licence: SIL Open Font License 1.1 (scripts.sil.org/OFL); full text in `Assets/_Project/Resources/Fonts/OFL.txt`.
+
 ## Textures and sky
 - Poly Haven (polyhaven.com), CC0 1.0: Brown Mud Dry, Concrete Floor Worn 001, Concrete Wall 003, Corrugated Iron, Dry Ground 01, Worn Asphalt, Painted Plaster Wall, Worn Corrugated Iron, Container Side, Gravel Concrete; HDRI "Rogland Clear Night".
 

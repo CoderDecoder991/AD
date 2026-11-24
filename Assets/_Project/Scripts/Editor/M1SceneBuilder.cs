@@ -205,7 +205,7 @@ namespace AirDefense.EditorTools
                 "Radar reports small drones approaching the installation.\n\n" +
                 "You are on the ZU-23-2. Drag on the left side of the screen to aim, hold FIRE with your right thumb. " +
                 "Brackets mark targets on screen; arrows at the edge point to targets you can't see.\n\n" +
-                "Moving targets need leading: aim at the yellow ring.\n\n" +
+                "Moving targets need leading: aim at the amber ring.\n\n" +
                 "Objective: survive three waves with the installation intact.";
             EditorUtility.SetDirty(m);
             if (!created) return m;

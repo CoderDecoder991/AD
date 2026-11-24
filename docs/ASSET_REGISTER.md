@@ -120,8 +120,8 @@ Classification required by brief v1.1 §20: **existing and usable**, **needs imp
 | V-03 | Threat destruction effects | **Temporary placeholder** (unlit sphere) → new asset required (Blender-rendered flipbooks) | Claude (in-house) | Project-original | Placeholder |
 | V-06 | Searchlight beams | Needs improvement (flat additive cone → beam shader) | Claude (in-house) | Project-original | Integrated |
 | V-01/02 | Muzzle flash, tracers, airbursts | Existing and usable (user-approved); minor improvements | Claude (in-house) | Project-original | Integrated |
-| U-01/02 | Weapon tile icons, radar symbols | New asset required | Claude (in-house SVG) | Project-original | Not started |
-| U-03 | HUD font | New asset required — proposal Barlow Semi Condensed (OFL) | User decision (font choice) | SIL OFL (proposed) | Built-in Arial-like font today |
+| U-01/02 | Weapon tile icons, radar symbols | Existing and usable (VS-2): tile icons are flat silhouettes rendered from the weapon models (`tools/blender/render_weapon_icons.py` → `Resources/UI/icon_*.png`); radar symbols, sweep, wedge, lens and frame are generated in code (`UiFactory`) | Claude (in-house) | Project-original (icons derived from the CC-BY models) | Integrated |
+| U-03 | HUD font | Existing and usable: Barlow Semi Condensed Regular/Medium/SemiBold/Bold, from google/fonts (`Assets/_Project/Resources/Fonts/`, OFL.txt included) | — | SIL OFL 1.1 | Integrated (VS-2) |
 
 ### Assets added in the visual-clarity pass (2026-11-24), all CC0 from Poly Haven (polyhaven.com), processed by `tools/blender/process_props.py`
 
