@@ -111,7 +111,9 @@ namespace AirDefense.EditorTools
             {
                 if (l.type == LightType.Directional) { l.lightmapBakeType = LightmapBakeType.Mixed; continue; }
                 bool fixedLamp = l.name == "PracticalLight" || l.name == "StreetLight" || l.name == "SecurityLight";
-                l.lightmapBakeType = fixedLamp ? LightmapBakeType.Baked : LightmapBakeType.Realtime;
+                // Mixed: the lamp keeps its realtime pool of light (baked point lights fall off differently and
+                // came out far dimmer on the device) and adds baked bounce light to the lightmap.
+                l.lightmapBakeType = fixedLamp ? LightmapBakeType.Mixed : LightmapBakeType.Realtime;
                 if (fixedLamp) baked++;
             }
 

@@ -435,7 +435,9 @@ namespace AirDefense.EditorTools
                 {
                     var go = (GameObject)PrefabUtility.InstantiatePrefab(asset, env);
                     go.transform.position = gunRoot.position;
-                    foreach (var r in go.GetComponentsInChildren<MeshRenderer>(true)) r.shadowCastingMode = ShadowCastingMode.On;
+                    // The berm casts shadows; the 486 low sandbags only receive them (their contact shading is baked).
+                    foreach (var r in go.GetComponentsInChildren<MeshRenderer>(true))
+                        r.shadowCastingMode = asset == bermAsset ? ShadowCastingMode.On : ShadowCastingMode.Off;
                     GameObjectUtility.SetStaticEditorFlags(go, StaticEditorFlags.BatchingStatic);
                 }
             }

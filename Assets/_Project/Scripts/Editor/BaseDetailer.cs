@@ -59,6 +59,22 @@ namespace AirDefense.EditorTools
             return m;
         }
 
+        /// <summary>Unlit glowing surface (HDR colour, so bloom picks it up).</summary>
+        public static Material Glow(string name, Color hdr)
+        {
+            Directory.CreateDirectory(MatDir);
+            string path = $"{MatDir}{name}.mat";
+            var unlit = Shader.Find("Universal Render Pipeline/Unlit");
+            var m = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (m == null) { m = new Material(unlit); AssetDatabase.CreateAsset(m, path); }
+            m.shader = unlit;
+            m.SetTexture("_BaseMap", null);
+            m.SetColor("_BaseColor", hdr);
+            m.enableInstancing = true;
+            EditorUtility.SetDirty(m);
+            return m;
+        }
+
         private static Material Load(string name)
         {
             Directory.CreateDirectory(MatDir);
@@ -82,8 +98,10 @@ namespace AirDefense.EditorTools
                 trim = concreteTrim,
                 darkMetal = darkMetal,
                 // Lit windows: warm interior light (HDR so bloom makes them glow), and a cooler fluorescent variant.
-                litWindow = Plain("WindowLitCool", new Color(0.1f, 0.1f, 0.1f), 0.8f, new Color(1.6f, 1.75f, 1.7f)),
-                warmWindow = Plain("WindowLitWarm", new Color(0.1f, 0.1f, 0.1f), 0.8f, new Color(2.2f, 1.45f, 0.75f)),
+                // Lit windows are unlit glowing surfaces: they do not depend on the Lit shader's emission keyword,
+                // which the lighting bake strips again when it re-validates materials (VS-4).
+                litWindow = Glow("WindowLitCool", new Color(1.5f, 1.65f, 1.6f)),
+                warmWindow = Glow("WindowLitWarm", new Color(2.0f, 1.35f, 0.7f)),
                 darkWindow = Plain("WindowDark", new Color(0.03f, 0.04f, 0.05f), 0.92f),
                 asphalt = Surface("Asphalt", "worn_asphalt", 0.25f),
                 paint = Plain("RoadPaint", new Color(0.78f, 0.77f, 0.72f), 0.35f),
@@ -317,18 +335,19 @@ namespace AirDefense.EditorTools
         {
             var root = new GameObject("Crew (CC-BY, user-supplied)").transform;
             root.SetParent(env, false);
-            void Soldier(string model, Vector3 pos, float yaw)
+            void Soldier(string model, Vector3 pos, float yaw, bool castShadows = false)
             {
                 var asset = AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/_Project/Art/Models/Characters/{model}/{model}.gltf");
                 if (asset == null) return;
                 var go = (GameObject)PrefabUtility.InstantiatePrefab(asset, root);
                 go.transform.SetPositionAndRotation(pos, Quaternion.Euler(0f, yaw, 0f));
-                foreach (var r in go.GetComponentsInChildren<MeshRenderer>(true)) r.shadowCastingMode = ShadowCastingMode.On;
+                foreach (var r in go.GetComponentsInChildren<MeshRenderer>(true))
+                    r.shadowCastingMode = castShadows ? ShadowCastingMode.On : ShadowCastingMode.Off;
                 GameObjectUtility.SetStaticEditorFlags(go, StaticEditorFlags.BatchingStatic);
             }
             // ZU-23-2 crew on the platform, beside the gun (loader by the ammo boxes, commander on the right).
-            Soldier("soldier_gear", zuPos + new Vector3(-2.3f, 0.2f, -2.2f), 25f);
-            Soldier("soldier_gear", zuPos + new Vector3(2.5f, 0.2f, -2.6f), -20f);
+            Soldier("soldier_gear", zuPos + new Vector3(-2.3f, 0.2f, -2.2f), 25f, true);  // close to the camera: real shadows
+            Soldier("soldier_gear", zuPos + new Vector3(2.5f, 0.2f, -2.6f), -20f, true);
             // C-RAM operator at the electronics cabinet side (left rear, away from the over-the-shoulder camera).
             Soldier("soldier_gear", cramPadTop + new Vector3(-3.6f, 0f, -2.8f), 35f);
             // Guards: command entrance, gate checkpoint, hangar, depot yard.
@@ -356,7 +375,8 @@ namespace AirDefense.EditorTools
                     var p = new Vector3(Mathf.Sin(a) * d, 0f, Mathf.Cos(a) * d);
                     if (Mathf.Abs(p.x) < fenceHalf + 4f && Mathf.Abs(p.z) < fenceHalf + 4f) continue; // keep the base clear
                     float s = Mathf.Lerp(scale.x, scale.y, R());
-                    var go = Prop(prop, root, p - Vector3.up * sink * s, R() * 360f, s, shadows: d < 170f);
+                    // No shadow casting: all scatter is outside the fence, beyond the 100 m High-tier shadow range.
+                    var go = Prop(prop, root, p - Vector3.up * sink * s, R() * 360f, s, shadows: false);
                     if (go != null) go.transform.rotation *= Quaternion.Euler((R() - 0.5f) * 8f, 0f, (R() - 0.5f) * 8f);
                 }
             }

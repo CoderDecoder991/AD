@@ -558,6 +558,23 @@ namespace AirDefense.UI
                 });
                 diag.GetComponentInChildren<Text>().text = "DEV: DIAGNOSTICS OFF";
                 diag.GetComponent<RectTransform>().Anchor(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 315f), new Vector2(420f, 64f));
+
+                // Performance switches (dev builds): change one feature live, then measure (tools/measure_fps.sh).
+                (string, System.Func<string>, System.Func<string>)[] perf =
+                {
+                    ("DevMsaa", DevPerfToggles.Msaa, () => DevPerfToggles.MsaaLabel),
+                    ("DevScale", DevPerfToggles.Scale, () => DevPerfToggles.ScaleLabel),
+                    ("DevShadows", DevPerfToggles.Shadows, () => DevPerfToggles.ShadowsLabel),
+                    ("DevPost", DevPerfToggles.Post, () => DevPerfToggles.PostLabel),
+                    ("DevBeams", DevPerfToggles.Beams, () => DevPerfToggles.BeamsLabel),
+                };
+                for (int i = 0; i < perf.Length; i++)
+                {
+                    var (id, toggle, label) = perf[i];
+                    Button b = null;
+                    b = UiFactory.Button(id, _pause.transform, label(), 22, () => b.GetComponentInChildren<Text>().text = toggle());
+                    b.GetComponent<RectTransform>().Anchor(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2((i - 2) * 230f, 30f), new Vector2(210f, 60f));
+                }
             }
 
             var creditsBtn = UiFactory.Button("Credits", card, "CREDITS", 26, () => _credits.SetActive(true));
@@ -866,7 +883,7 @@ namespace AirDefense.UI
             if (r.threatsLeaked > 0)
                 tip = $"{r.threatsLeaked} threat(s) reached the base. Engage earlier: watch the radar and the edge arrows, and turn toward contacts before they close in.";
             else if (r.Accuracy < 0.08f)
-                tip = "Accuracy was low. Fire short bursts and aim at the yellow lead ring instead of directly at the target.";
+                tip = "Accuracy was low. Fire short bursts and aim at the amber lead ring instead of directly at the target.";
             else
                 tip = "Clean defence. Next: try with aim assist off, or the DEV stress test from the pause menu.";
 

@@ -120,7 +120,7 @@ A **visual vertical slice** (brief §21) before M3b, in small reviewable steps, 
 | VS-1 | Player-facing presentation: hide diagnostics, review-build option, immersive mode and safe areas | Code | **Done 2026-11-24** — see §6 |
 | VS-2 | HUD design system: font, tokens, TextMeshPro, new radar with sweep, weapon tiles, FIRE control, prompts, threat markers | Code + UI art | **Done 2026-11-24** (3:2 verified on the Pad 8; other aspect ratios pending) — see §6 |
 | VS-3 | Emplacement redesign + gameplay camera tuning (ZU pit, revetment, lit work area) | Blender + code | **Done 2026-11-24** — see §6 |
-| VS-4 | Lighting: hierarchy, baked lightmaps/probes for the base, searchlight beam shader and lamp glow | Code + pipeline | Night readability captures, fps |
+| VS-4 | Lighting: hierarchy, baked lightmaps/probes for the base, searchlight beam shader and lamp glow | Code + pipeline | **Done 2026-11-24** — see §6 |
 | VS-5 | Environment: site layout landmarks, modelled terrain and ridges, HESCO/T-walls, LODs | Blender + code | Wide and gameplay captures |
 | VS-6 | ZU-23-2 hero material pass and grounding; decide on commissioning a hero model | In-house / decision | Close-up captures |
 | VS-7 | One threat model + destruction effects (fireball, smoke, debris) + interception sequence | Asset + VFX | Recorded engagement |
@@ -159,3 +159,11 @@ Details: `VISUAL_PRODUCTION_STANDARD.md`, `HUD_UI_SPECIFICATION.md`, `ENVIRONMEN
 - Items overlapped by the bigger mound moved: road start, barrier ring (r 21.5 m), south barriers, checkpoint barriers, a street lamp, the gate guard.
 - Verified on the Pad 8 (review build): `docs/visual/captures/2026-11-24_VS3_zu_front.png`; camera sweep north/east/south/low elevation shows no clipping (`…_VS3_camera_sweep.png`).
 - Still open for this area: crew ammo niches and a hooded work light model (props), contact-shadow quality under the gun (VS-4 lighting), the gun's own materials (VS-6).
+
+### VS-4 — Lighting and searchlights (2026-11-24)
+- Searchlights: `AirDefense/LightBeam` shader (soft edges from view angle, falloff along the beam, drifting dust, fog-free) on a cone with proper normals/UVs; lamp-head glow that flares when the beam points at the camera. The flat translucent strips are gone (checklist E4).
+- Baked lighting (`Editor/LightBake.cs`, run after the scene builder): static/GI flags, small and far objects lit by probes, moon Mixed (baked indirect, realtime direct and shadows), fixed lamps Mixed (realtime pools + baked bounce), 579 light probes, baked AO. CPU bake ≈ 0.8 min, one 2048 lightmap.
+- Lit windows use an unlit glow material (the bake re-validation stripped the Lit shader's emission keyword).
+- Performance investigation and fixes (details in `ANDROID_PERFORMANCE_BUDGET.md` §2): High tier 2x MSAA (4x + post was the cost), SSAO off (baked AO), shadows 100 m, scatter casts no shadows, sandbags receive only, distant guards cast no shadows, **dynamic resolution**. Dev-build performance switches (`Core/DevPerfToggles.cs`) and `tools/measure_fps.sh` added for future measurement.
+- Verified on the Pad 8 (review build): `docs/visual/captures/2026-11-24_VS4_*.png`; second device Samsung S24 Ultra (19.5:9 HUD layout: `…_S24_zu_20x9.png`).
+- Open: 20-minute soak with the 20 s step-up wait; re-test the S24 cool with power saving off.

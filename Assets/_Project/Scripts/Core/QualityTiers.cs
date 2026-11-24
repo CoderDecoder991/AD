@@ -21,14 +21,19 @@ namespace AirDefense.Core
             public int msaa;               // 1, 2 or 4 samples
             public bool ssao;              // screen-space ambient occlusion
             public int anisotropic;        // forced minimum anisotropic filtering level (sharp ground at grazing angles)
+            public float minScale;         // dynamic-resolution floor (AdaptiveResolution)
         }
 
         // Visual-clarity pass (2026-11-24): High renders at 85% with FSR sharpening, 4x MSAA and SSAO.
         public static TierValues For(QualityTier t) => t switch
         {
-            QualityTier.High => new TierValues { renderScale = 0.85f, shadowDistance = 150f, targetFps = 60, msaa = 4, ssao = true, anisotropic = 8 },
-            QualityTier.Medium => new TierValues { renderScale = 0.70f, shadowDistance = 80f, targetFps = 60, msaa = 2, ssao = false, anisotropic = 4 },
-            _ => new TierValues { renderScale = 0.55f, shadowDistance = 0f, targetFps = 30, msaa = 1, ssao = false, anisotropic = 2 },
+            // SSAO off since VS-4: baked ambient occlusion now covers the static base, and SSAO at 85% scale
+            // held the Pad 8 at 40 fps (GPU-bound; MEDIUM without it ran a locked 60).
+            // Measured on the Pad 8 (VS-4, dev switches): 4x MSAA + post-processing at 0.85 scale is bandwidth-bound at
+            // ~40-58 fps; 2x MSAA holds 60 with most of the edge quality. Shadows/beams/SSAO were not the cost.
+            QualityTier.High => new TierValues { renderScale = 0.85f, shadowDistance = 100f, targetFps = 60, msaa = 2, ssao = false, anisotropic = 8, minScale = 0.65f },
+            QualityTier.Medium => new TierValues { renderScale = 0.70f, shadowDistance = 80f, targetFps = 60, msaa = 2, ssao = false, anisotropic = 4, minScale = 0.55f },
+            _ => new TierValues { renderScale = 0.55f, shadowDistance = 0f, targetFps = 30, msaa = 1, ssao = false, anisotropic = 2, minScale = 0.55f },
         };
 
         public static QualityTier Detected { get; private set; } = QualityTier.High;
@@ -55,6 +60,8 @@ namespace AirDefense.Core
             if (!Application.isEditor && GraphicsSettings.currentRenderPipeline is UniversalRenderPipelineAsset urp)
             {
                 urp.renderScale = v.renderScale;
+                AdaptiveResolution.MaxScale = v.renderScale;
+                AdaptiveResolution.MinScale = v.minScale;
                 urp.shadowDistance = Mathf.Max(0.01f, v.shadowDistance);
                 urp.msaaSampleCount = v.msaa;
                 SetFeature<ScreenSpaceAmbientOcclusion>(urp, v.ssao);
