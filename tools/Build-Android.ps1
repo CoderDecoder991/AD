@@ -23,6 +23,7 @@ param(
     [int]$MaxAttempts = 30,
     [int]$DelaySeconds = 5,
     [switch]$Install,
+    [switch]$Review,          # non-development review build: no watermark, no dev overlay/buttons (VS-1)
     [string]$UnityVersion = "6000.6.10f1",
     [string]$PackageName = "com.placeholder.airdefense"
 )
@@ -33,7 +34,9 @@ $projectPath = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $editorRoot  = "C:\Program Files\Unity\Hub\Editor\$UnityVersion\Editor"
 $unityExe    = Join-Path $editorRoot "Unity.exe"
 $adbExe      = Join-Path $editorRoot "Data\PlaybackEngines\AndroidPlayer\SDK\platform-tools\adb.exe"
-$apkPath     = Join-Path $projectPath "Builds\Android\AirDefense-dev.apk"
+$apkName     = if ($Review) { "AirDefense-review.apk" } else { "AirDefense-dev.apk" }
+$apkPath     = Join-Path $projectPath "Builds\Android\$apkName"
+$buildMethod = if ($Review) { "AirDefense.EditorTools.BuildScript.BuildAndroidReview" } else { "AirDefense.EditorTools.BuildScript.BuildAndroidDev" }
 $logDir      = Join-Path $projectPath "Logs\Build"
 
 if (-not (Test-Path $unityExe)) { throw "Unity not found: $unityExe" }
@@ -86,6 +89,9 @@ function Get-SeedPath([string]$url) {
 # Downloads $url to $dest, resuming after each interruption, until the file
 # matches the published SHA-1 (or the attempt budget runs out).
 function Get-VerifiedFile([string]$url, [string]$dest, [switch]$Optional) {
+    # curl reports retries on stderr; under "Stop" Windows PowerShell would turn that into a fatal error.
+    # Exit codes and checksums decide success here instead.
+    $ErrorActionPreference = "Continue"
     New-Item -ItemType Directory -Force (Split-Path $dest) | Out-Null
     $expected = (& $curlExe -sSLf --max-time 60 --retry 10 --retry-all-errors "$url.sha1" 2>$null)
     if ($LASTEXITCODE -ne 0 -or -not $expected) {
@@ -150,7 +156,7 @@ for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
         "-batchmode", "-quit", "-nographics",
         "-projectPath", "`"$projectPath`"",
         "-buildTarget", "Android",
-        "-executeMethod", "AirDefense.EditorTools.BuildScript.BuildAndroidDev",
+        "-executeMethod", $buildMethod,
         "-logFile", "`"$log`""
     )
     $p = Start-Process -FilePath $unityExe -ArgumentList $unityArgs -Wait -PassThru -NoNewWindow

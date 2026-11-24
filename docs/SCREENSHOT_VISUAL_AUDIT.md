@@ -23,12 +23,12 @@ Labels used: **Observed** = visible in the screenshot or measured on the device.
 
 ## 2. Issues from the brief (§17.1), audited against the project
 
-### 2.1 Development diagnostics visible — Severity: **High** (release blocker) — *Code*
+### 2.1 Development diagnostics visible — Severity: **High** (release blocker) — *Code* — **Fixed in VS-1 (2026-11-24)**
 - **Observed:** upper right shows `55.5 fps (worst 25.0 ms)`, `3200x2136 scale 0.85`, `Vulkan Adreno (TM) 825`; bottom-right corner shows Unity's "Development Build" watermark.
 - **Confirmed in project:** the overlay is created whenever `Debug.isDebugBuild` is true (`Core/RuntimeBootstrap.cs`). All test APKs are Development builds (`Editor/BuildScript.cs`), so Unity also draws the watermark.
 - **Proposed fix:** overlay hidden by default in every build; enabled only from a hidden developer gesture (e.g. 4-finger tap) or a dev-menu toggle, positioned so it never overlaps HUD. Add a non-development "review build" option to `BuildScript` (no watermark, no dev buttons) for screenshots and user review; keep Development builds for profiling.
 
-### 2.2 Android system UI visible — Severity: **High** — *Code*
+### 2.2 Android system UI visible — Severity: **High** — *Code* — **Fixed in VS-1 (2026-11-24)**
 - **Observed:** status bar (time, date, battery) at the top and the gesture handle at the bottom in the user's screenshot.
 - **Observed:** adb screen captures of the same build show no system bars. The bars therefore appear only in some situations.
 - **Confirmed in project:** `androidStartInFullscreen: 1`, `androidRenderOutsideSafeArea: 1`, entry point GameActivity (`androidApplicationEntry: 2`).
@@ -117,7 +117,7 @@ A **visual vertical slice** (brief §21) before M3b, in small reviewable steps, 
 
 | Step | Content | Kind | Review output |
 |---|---|---|---|
-| VS-1 | Player-facing presentation: hide diagnostics, review-build option, immersive mode and safe areas | Code | Clean captures; no debug text |
+| VS-1 | Player-facing presentation: hide diagnostics, review-build option, immersive mode and safe areas | Code | **Done 2026-11-24** — see §6 |
 | VS-2 | HUD design system: font, tokens, TextMeshPro, new radar with sweep, weapon tiles, FIRE control, prompts, threat markers | Code + UI art | HUD screenshots at 16:9, 20:9, 3:2 |
 | VS-3 | Emplacement redesign + gameplay camera tuning (ZU pit, revetment, lit work area) | Blender + code | Camera framing captures |
 | VS-4 | Lighting: hierarchy, baked lightmaps/probes for the base, searchlight beam shader and lamp glow | Code + pipeline | Night readability captures, fps |
@@ -127,3 +127,16 @@ A **visual vertical slice** (brief §21) before M3b, in small reviewable steps, 
 | VS-8 | Performance pass on all three tiers, 20-minute soak, acceptance checklist | Test | `ANDROID_PERFORMANCE_BUDGET.md` results |
 
 Details: `VISUAL_PRODUCTION_STANDARD.md`, `HUD_UI_SPECIFICATION.md`, `ENVIRONMENT_ART_BRIEF.md`, `WEAPON_ASSET_BRIEFS.md`, `VFX_AND_ANIMATION_SPEC.md`, `ANDROID_PERFORMANCE_BUDGET.md`, `VISUAL_ACCEPTANCE_CHECKLIST.md`.
+
+---
+
+## 6. Change log
+
+### VS-1 — Player-facing presentation (2026-11-24)
+- Diagnostics readout hidden by default in every build; development builds toggle it with a four-finger tap, F3, or Pause ▸ "DEV: DIAGNOSTICS" (`Core/DiagnosticsOverlay.cs`).
+- Review build: `BuildScript.BuildAndroidReview` / `tools/Build-Android.ps1 -Review` — a non-development player with no watermark, no readout and no DEV buttons.
+- Immersive full screen re-applied at start, on focus regain, on resume and 0.5 s later (`Core/ImmersiveMode.cs`, Android `WindowInsetsController`, transient bars by swipe).
+- HUD keeps a bottom margin (2% of screen height) above the gesture bar.
+- Build tool: curl retry messages no longer abort the Gradle dependency seeding (needed for release builds).
+- **Verified on the Pad 8 (review build):** no debug text or watermark (`docs/visual/captures/2026-11-24_VS1_review_start.png`); system bars hidden again after pulling down the notification shade and after returning from recent apps (`…_after_shade.png`, `…_after_recents.png`; `dumpsys window`: statusBars and navigationBars `visible=false`).
+- Not verified: the four-finger toggle (adb cannot send a four-finger touch); the user's own screenshot gesture (to be checked on the next review).

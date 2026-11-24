@@ -133,6 +133,10 @@ namespace AirDefense.UI
         {
             Rect s = Screen.safeArea;
             _lastSafe = s;
+            // Keep controls clear of the gesture bar at the bottom edge (VS-1): ~2% of the screen height
+            // (≈ 20 reference px), on top of whatever the system safe area already reserves.
+            float gesture = Screen.height * 0.02f;
+            if (s.yMin < gesture) { s.height -= gesture - s.yMin; s.y = gesture; }
             _safe.anchorMin = new Vector2(s.xMin / Screen.width, s.yMin / Screen.height);
             _safe.anchorMax = new Vector2(s.xMax / Screen.width, s.yMax / Screen.height);
             _safe.offsetMin = _safe.offsetMax = Vector2.zero;
@@ -448,6 +452,15 @@ namespace AirDefense.UI
                     RefreshTiles();
                 });
                 cr.GetComponent<RectTransform>().Anchor(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 245f), new Vector2(420f, 64f));
+                // Diagnostics readout: hidden by default (VS-1); also toggled by a four-finger tap or F3.
+                Button diag = null;
+                diag = UiFactory.Button("DevDiagnostics", card, "", 24, () =>
+                {
+                    DiagnosticsOverlay.Toggle();
+                    diag.GetComponentInChildren<Text>().text = DiagnosticsOverlay.Visible ? "DEV: DIAGNOSTICS ON" : "DEV: DIAGNOSTICS OFF";
+                });
+                diag.GetComponentInChildren<Text>().text = "DEV: DIAGNOSTICS OFF";
+                diag.GetComponent<RectTransform>().Anchor(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 315f), new Vector2(420f, 64f));
             }
 
             var creditsBtn = UiFactory.Button("Credits", card, "CREDITS", 26, () => _credits.SetActive(true));

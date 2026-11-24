@@ -29,7 +29,14 @@ namespace AirDefense.EditorTools
         [MenuItem("AirDefense/Build/Android Development APK (Autoconnect Profiler)")]
         public static void BuildAndroidDevProfiler() => Build(autoRun: false, profiler: true);
 
-        private static void Build(bool autoRun, bool profiler = false)
+        /// <summary>
+        /// Review build (VS-1): a non-development player, as players will see it - no "Development Build"
+        /// watermark, no diagnostics readout, no DEV buttons. Use for screenshots and user review.
+        /// </summary>
+        [MenuItem("AirDefense/Build/Android Review APK (no dev tools)")]
+        public static void BuildAndroidReview() => Build(autoRun: false, review: true);
+
+        private static void Build(bool autoRun, bool profiler = false, bool review = false)
         {
             if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.Android)
                 EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Android, BuildTarget.Android);
@@ -41,11 +48,11 @@ namespace AirDefense.EditorTools
                 throw new InvalidOperationException("No enabled scenes in Build Settings. Run AirDefense ▸ Setup first.");
 
             Directory.CreateDirectory(OutputDir);
-            string path = Path.Combine(OutputDir, "AirDefense-dev.apk");
+            string path = Path.Combine(OutputDir, review ? "AirDefense-review.apk" : "AirDefense-dev.apk");
 
             // No profiler autoconnect by default: it makes the game wait for the PC at startup (about 10 s
             // with the USB cable in, and it never starts properly with the cable out). Profile on request.
-            var options = BuildOptions.Development;
+            var options = review ? BuildOptions.None : BuildOptions.Development;
             if (profiler) options |= BuildOptions.ConnectWithProfiler;
             if (autoRun) options |= BuildOptions.AutoRunPlayer;
 

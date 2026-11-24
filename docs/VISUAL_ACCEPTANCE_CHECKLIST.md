@@ -6,8 +6,8 @@ Scope (brief §21): the night installation, ZU-23-2 as hero weapon, one represen
 
 | # | Check | Pass rule | Result |
 |---|---|---|---|
-| P1 | No debug information in the player view | No fps, resolution, GPU name, profiler data or "Development Build" text in any capture | |
-| P2 | Immersive presentation | No status bar or navigation bar during gameplay, including after a screenshot gesture and after returning from the recent-apps screen; no control under a cut-out or gesture area | |
+| P1 | No debug information in the player view | No fps, resolution, GPU name, profiler data or "Development Build" text in any capture | **Pass (VS-1, 2026-11-24, review build)** |
+| P2 | Immersive presentation | No status bar or navigation bar during gameplay, including after a screenshot gesture and after returning from the recent-apps screen; no control under a cut-out or gesture area | **Pass for notification shade and recent apps (VS-1)**; screenshot gesture to be checked by the user |
 | P3 | HUD inside safe areas at 4:3, 3:2, 16:9, 20:9 | No overlap between HUD elements; all touch targets ≥ 96 ref px | |
 | E1 | One coherent installation | From the ZU camera at least one landmark (radar tower, command) and the base layout are visible; no floating or intersecting objects | |
 | E2 | Depth and horizon | Real terrain ridges visible as separate layers fading into haze; the sky shows no printed mountains | |

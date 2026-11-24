@@ -5,11 +5,18 @@ namespace AirDefense.Core
     /// <summary>
     /// Development-only on-screen readout: FPS (average and worst frame over the
     /// last second), frame time, resolution and render scale. Uses IMGUI so it
-    /// needs no UI assets. Not shipped in release builds (see RuntimeBootstrap).
+    /// needs no UI assets. Only created in development builds (see RuntimeBootstrap),
+    /// and even there **hidden by default** (VS-1, brief v1.1 §17.1/§18.8): shown with a
+    /// four-finger tap, the F3 key, or Pause ▸ "DEV: DIAGNOSTICS".
     /// </summary>
     public sealed class DiagnosticsOverlay : MonoBehaviour
     {
         private const float SampleWindow = 1f;
+
+        /// <summary>Whether the readout is drawn. Off by default so captures stay clean.</summary>
+        public static bool Visible { get; set; }
+        public static void Toggle() => Visible = !Visible;
+        private bool _gestureArmed = true;
 
         private float _accum;
         private int _frames;
@@ -20,6 +27,18 @@ namespace AirDefense.Core
 
         private void Update()
         {
+            // Hidden developer gesture: four fingers on the screen (once per touch), or F3.
+            var ts = UnityEngine.InputSystem.Touchscreen.current;
+            if (ts != null)
+            {
+                int down = 0;
+                foreach (var t in ts.touches) if (t.press.isPressed) down++;
+                if (down >= 4 && _gestureArmed) { Toggle(); _gestureArmed = false; }
+                else if (down == 0) _gestureArmed = true;
+            }
+            var kb = UnityEngine.InputSystem.Keyboard.current;
+            if (kb != null && kb.f3Key.wasPressedThisFrame) Toggle();
+
             float dt = Time.unscaledDeltaTime;
             _accum += dt;
             _frames++;
@@ -37,6 +56,7 @@ namespace AirDefense.Core
 
         private void OnGUI()
         {
+            if (!Visible) return;
             if (_style == null)
             {
                 _style = new GUIStyle(GUI.skin.label)
