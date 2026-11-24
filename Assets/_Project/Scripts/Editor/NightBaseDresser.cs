@@ -388,6 +388,8 @@ namespace AirDefense.EditorTools
             sweep.head = head;
             sweep.spot = spot;
             sweep.beamMaterial = beamMat;
+            // Lamp glow (flares when the beam points at the camera): every beam has a visible source.
+            sweep.glowMaterial = GlowMaterial("SearchlightGlow", SoftDotAsset(), new Color(2.2f, 2.3f, 2.5f, 1f));
             sweep.centerYaw = centerYaw;
             sweep.phase = phase;
         }
@@ -442,6 +444,27 @@ namespace AirDefense.EditorTools
             mat.shader = shader;
             mat.SetTexture("_BaseMap", tex);
             mat.SetColor("_BaseColor", hdrColour);
+            mat.renderQueue = (int)RenderQueue.Transparent;
+            EditorUtility.SetDirty(mat);
+            return mat;
+        }
+
+        /// <summary>Searchlight beam material (AirDefense/LightBeam: soft edges, falloff, drifting dust). VS-4.</summary>
+        public static Material BeamMaterial()
+        {
+            var shader = Shader.Find("AirDefense/LightBeam");
+            Directory.CreateDirectory(Gen);
+            string path = $"{Gen}SearchlightBeam.mat";
+            var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (mat == null) { mat = new Material(shader); AssetDatabase.CreateAsset(mat, path); }
+            mat.shader = shader;
+            mat.SetColor("_Color", new Color(0.85f, 0.92f, 1f, 1f));
+            mat.SetFloat("_Intensity", 0.38f);
+            mat.SetFloat("_EdgePower", 2.2f);
+            mat.SetFloat("_Falloff", 5f);
+            mat.SetFloat("_NoiseScale", 0.08f);
+            mat.SetFloat("_NoiseSpeed", 1.5f);
+            mat.SetFloat("_NoiseAmount", 0.45f);
             mat.renderQueue = (int)RenderQueue.Transparent;
             EditorUtility.SetDirty(mat);
             return mat;

@@ -479,8 +479,7 @@ namespace AirDefense.EditorTools
             NightBaseDresser.PostProcessing(cam);
 
             // Props, practical lights and searchlights (CC0 Poly Haven).
-            var beamMat = NightBaseDresser.AdditiveParticleMaterial("SearchlightBeam", Texture2D.whiteTexture);
-            beamMat.SetTexture("_BaseMap", null); // vertex alpha drives the fade; cone has no UVs
+            var beamMat = NightBaseDresser.BeamMaterial(); // VS-4: soft-edged beam shader (AirDefense/LightBeam)
             NightBaseDresser.DressBase(env, gunRoot, bermHeight, beamMat);
             GameObject cramModel = NightBaseDresser.PlaceDisplayWeapons(env, m["Concrete"], m["Sandbag"]);
 

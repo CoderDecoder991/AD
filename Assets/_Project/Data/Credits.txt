@@ -29,7 +29,7 @@ listing or a linked page. Full asset tracking is in `docs/ASSET_REGISTER.md`.
   - Licence: SIL Open Font License 1.1 (scripts.sil.org/OFL); full text in `Assets/_Project/Resources/Fonts/OFL.txt`.
 
 ## Textures and sky
-- Poly Haven (polyhaven.com), CC0 1.0: Brown Mud Dry, Concrete Floor Worn 001, Concrete Wall 003, Corrugated Iron, Dry Ground 01, Worn Asphalt, Painted Plaster Wall, Worn Corrugated Iron, Container Side, Gravel Concrete; HDRI "Rogland Clear Night".
+- Poly Haven (polyhaven.com), CC0 1.0: Brown Mud Dry, Concrete Floor Worn 001, Concrete Wall 003, Corrugated Iron, Dry Ground 01, Worn Asphalt, Painted Plaster Wall, Worn Corrugated Iron, Container Side, Gravel Concrete, Hessian 230, Dry Mud Field 001; HDRI "Rogland Clear Night".
 
 ## Sound
 - "Impacts + Guns SFX" (opengameart.org/content/impactsgunsfx), CC0. Pitched, trimmed and filtered.
