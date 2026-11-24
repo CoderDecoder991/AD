@@ -5,8 +5,8 @@ Per model:
 - removes the importer's bone-display sphere (it inflated the bounds to 2.8 m);
 - makes materials opaque (the source marks whole bodies as alpha-blended, which makes overlapping clothing
   layers draw in the wrong order: the patchy look seen in the previews);
-- full-gear soldier: paints out the national patches ("РОССИЯ" + flag, round emblem) on its gear texture
-  with a plain velcro tone (project rule R-14: no real national flags or insignia);
+- full-gear soldier: replaces the national patch ("РОССИЯ" + flag) with a "SUNIL" name patch and paints out
+  the round emblem (project rule R-14: no real national flags or insignia);
 - poses T-posed Mixamo rigs into a relaxed standing stance (arms down), then bakes the pose into the mesh
   and removes the skeleton;
 - decimates to a crew-figure budget, stands the figure on the ground, exports .gltf + textures.
@@ -29,9 +29,13 @@ MODELS = [
     ("soldier_gear",     "soldier_full_gear.glb", 24000,       "keep"),
 ]
 
-# Patch areas on the full-gear texture "Image_2" (1024², pixel boxes with the origin at the TOP-left,
-# as seen in an image viewer): two copies of the "РОССИЯ"/flag patch and a round emblem.
-PATCHES = {"Image_2": [(916, 580, 1024, 710), (6, 832, 142, 980), (6, 750, 58, 802)]}
+# Full-gear texture "Image_2" (1024², pixel boxes with the origin at the TOP-left, as seen in an image viewer).
+# The national patch ("РОССИЯ" + flag) appears twice; it is replaced by a "SUNIL" name patch (user request
+# 2026-11-24, tiles made by tools/textures/make_name_patch.py, pre-mirrored/rotated to match the UVs).
+# The round emblem is painted out.
+PATCHES = {"Image_2": [(6, 750, 58, 802)]}
+NAME_PATCH_DIR = os.path.abspath(os.path.join(SRC, "patch"))
+NAME_PATCHES = {"Image_2": [("patch_right.png", 921, 644), ("patch_left.png", 72, 872)]}
 VELCRO = (0.105, 0.11, 0.1)  # dull olive-grey, like the bare loop panel
 
 
@@ -55,6 +59,31 @@ def paint_out(img, boxes):
     img.update()
     img.pack()
     print(f"[chars] painted out {len(boxes)} patch areas on {img.name}")
+
+
+def paste_tile(img, tile_path, tx, ty):
+    """Copy a PNG tile into the texture with its top-left corner at (tx, ty), top-left origin."""
+    tile = bpy.data.images.load(tile_path)
+    w, h = img.size
+    tw, th = tile.size
+    px = list(img.pixels)
+    tp = list(tile.pixels)
+    for r in range(th):
+        y = h - 1 - (ty + r)          # destination row (Blender rows start at the bottom)
+        ry = th - 1 - r               # source row
+        if not 0 <= y < h:
+            continue
+        for c in range(tw):
+            x = tx + c
+            if not 0 <= x < w:
+                continue
+            i, j = (y * w + x) * 4, (ry * tw + c) * 4
+            px[i:i + 3] = tp[j:j + 3]
+    img.pixels = px
+    img.update()
+    img.pack()
+    bpy.data.images.remove(tile)
+    print(f"[chars] pasted {os.path.basename(tile_path)} into {img.name} at ({tx}, {ty})")
 
 
 def make_opaque(mat):
@@ -136,6 +165,8 @@ for name, file, target, pose in MODELS:
         img = bpy.data.images.get(img_name)
         if img is not None and file == "soldier_full_gear.glb":
             paint_out(img, boxes)
+            for tile, tx, ty in NAME_PATCHES.get(img_name, []):
+                paste_tile(img, os.path.join(NAME_PATCH_DIR, tile), tx, ty)
     for m in bpy.data.materials:
         make_opaque(m)
 
